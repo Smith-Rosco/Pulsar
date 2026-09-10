@@ -45,22 +45,10 @@ namespace Pulsar.Services.Interfaces
         /// </summary>
         Task<List<ProcessRegistryEntry>> GetAllProcessesAsync();
 
-        // ========== 黑名单管理 ==========
-
-        /// <summary>
-        /// 更新进程的黑名单状态
-        /// </summary>
-        Task SetBlacklistStatusAsync(string processName, bool isBlacklisted);
-
-        /// <summary>
-        /// 批量更新黑名单（用于对话框保存）
-        /// </summary>
-        Task UpdateBlacklistAsync(IEnumerable<string> blacklistedProcesses);
-
-        /// <summary>
-        /// 获取所有黑名单进程名
-        /// </summary>
-        Task<HashSet<string>> GetBlacklistedProcessesAsync();
+        // [W2] 黑名单写通道（SetBlacklistStatusAsync / UpdateBlacklistAsync /
+        // GetBlacklistedProcessesAsync）已删除：进程排除策略的读写统一走
+        // IDiscoveryExclusionPolicy（见 Services/WindowSwitching）。本注册表的
+        // IsBlacklisted 字段仅作对话框显示/缓存记账保留。
 
         // ========== 缓存管理 ==========
 

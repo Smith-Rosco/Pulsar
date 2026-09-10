@@ -270,84 +270,11 @@ namespace Pulsar.Services
             return Task.FromResult(processes);
         }
 
-        // ========== 黑名单管理 ==========
-
-        public async Task SetBlacklistStatusAsync(string processName, bool isBlacklisted)
-        {
-            if (string.IsNullOrWhiteSpace(processName)) return;
-
-            await _fileLock.WaitAsync();
-            try
-            {
-                var entry = _registry.Processes.GetValueOrDefault(processName);
-                if (entry != null)
-                {
-                    entry.IsBlacklisted = isBlacklisted;
-                    // 关键操作：立即保存
-                    await SaveImmediatelyAsync();
-                }
-            }
-            finally
-            {
-                _fileLock.Release();
-            }
-        }
-
-        public async Task UpdateBlacklistAsync(IEnumerable<string> blacklistedProcesses)
-        {
-            var blacklistSet = blacklistedProcesses.ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            await _fileLock.WaitAsync();
-            try
-            {
-                // 更新所有进程的黑名单状态
-                foreach (var (processName, entry) in _registry.Processes)
-                {
-                    entry.IsBlacklisted = blacklistSet.Contains(processName);
-                }
-
-                // 为新的黑名单进程创建条目（如果不存在）
-                foreach (var processName in blacklistSet)
-                {
-                    if (!_registry.Processes.ContainsKey(processName))
-                    {
-                        var now = DateTime.UtcNow;
-                        _registry.Processes[processName] = new ProcessRegistryEntry
-                        {
-                            ProcessName = processName,
-                            DisplayName = processName,
-                            IsBlacklisted = true,
-                            FirstSeen = now,
-                            LastSeen = now,
-                            SeenCount = 0
-                        };
-                    }
-                }
-
-                // 关键操作：立即保存
-                await SaveImmediatelyAsync();
-
-                // 同步到 Profiles.json (保持向后兼容)
-                await SyncToProfilesConfigAsync(blacklistSet);
-
-                // [Logging] Keep Information - important user action
-                _logger.LogInformation("[ProcessRegistry] Updated blacklist: {Count} processes", blacklistSet.Count);
-            }
-            finally
-            {
-                _fileLock.Release();
-            }
-        }
-
-        public Task<HashSet<string>> GetBlacklistedProcessesAsync()
-        {
-            var blacklisted = _registry.Processes.Values
-                .Where(p => p.IsBlacklisted)
-                .Select(p => p.ProcessName)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            return Task.FromResult(blacklisted);
-        }
+        // [W2] 黑名单管理三方法（SetBlacklistStatusAsync / UpdateBlacklistAsync /
+        // GetBlacklistedProcessesAsync）与 SyncToProfilesConfigAsync 已删除：均无生产调用方，
+        // 且其"写 ExcludeProcesses 配置键但从不重放给 evaluator"的双写路径正是架构审查
+        // W2 指出的陈旧一致性隐患。排除策略的读写统一走 DiscoveryExclusionPolicy。
+        // IsBlacklisted 字段仅作为注册表记账/对话框显示保留（由 InitializeAsync 迁移初始化）。
 
         // ========== 缓存管理 ==========
 
@@ -630,23 +557,6 @@ namespace Pulsar.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[ProcessRegistry] Failed to migrate from legacy config");
-            }
-        }
-
-        private async Task SyncToProfilesConfigAsync(HashSet<string> blacklistedProcesses)
-        {
-            try
-            {
-                await ConfigEditSession.RunAsync(_configService, session =>
-                    session.UpdatePluginProfile("com.pulsar.winswitcher", profile =>
-                        profile.Config["ExcludeProcesses"] = string.Join(",", blacklistedProcesses)));
-
-                // [Logging] Downgraded to Debug - happens frequently, not critical
-                _logger.LogDebug("[ProcessRegistry] Synced blacklist to Profiles.json");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[ProcessRegistry] Failed to sync to Profiles.json");
             }
         }
 

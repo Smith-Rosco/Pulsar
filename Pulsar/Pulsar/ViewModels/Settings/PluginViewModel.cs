@@ -8,6 +8,7 @@ using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.WindowSwitching;
 using Pulsar.ViewModels.Dialogs;
 using System;
 using System.Collections.Generic;
@@ -34,6 +35,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IDialogService? _dialogService;
         private readonly IWindowService? _windowService;
         private readonly IProcessRegistryService? _processRegistryService;
+        private readonly IDiscoveryExclusionPolicy? _exclusionPolicy;
         private readonly IScriptFileService? _scriptFileService;
         private readonly IScriptValidationService? _scriptValidationService;
         private readonly ExampleLibraryService? _exampleLibraryService;
@@ -161,7 +163,8 @@ namespace Pulsar.ViewModels.Settings
             IScriptFileService? scriptFileService = null,
             IScriptValidationService? scriptValidationService = null,
             ExampleLibraryService? exampleLibraryService = null,
-            IPluginMetadataRegistry? metadataRegistry = null)
+            IPluginMetadataRegistry? metadataRegistry = null,
+            IDiscoveryExclusionPolicy? exclusionPolicy = null)
         {
             _descriptor = descriptor;
             _registry = registry;
@@ -177,6 +180,7 @@ namespace Pulsar.ViewModels.Settings
             _scriptFileService = scriptFileService;
             _scriptValidationService = scriptValidationService;
             _exampleLibraryService = exampleLibraryService;
+            _exclusionPolicy = exclusionPolicy;
             _loc = localizationService;
             _formatter = new PluginAnalyticsFormatter(localizationService);
             _plugin = _registry.GetPlugin(descriptor.Id);
@@ -594,7 +598,7 @@ namespace Pulsar.ViewModels.Settings
                 HasSettings = Settings.Count > 0;
             }
 
-            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _windowService, _configService, _loc);
+            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _windowService, _configService, _loc, _exclusionPolicy);
             var dialogResult = await _dialogService.ShowCustomAsync(
                 string.Format(_loc?["Notification.ConfigureTitleFormat"] ?? "Configure {0}", Name),
                 dialogVm,

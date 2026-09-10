@@ -226,6 +226,9 @@ namespace Pulsar
             serviceCollection.AddSingleton<IWindowEligibilityPolicy>(sp =>
                 new WindowEligibilityPolicy((uint)Process.GetCurrentProcess().Id));
             serviceCollection.AddSingleton<IWindowEligibilityEvaluator, WindowEligibilityEvaluator>();
+            // [W2] Discovery Exclusion Policy：ExcludeProcesses/ExcludeRules/EnableSwitchDiagnostics
+            // 三个键的单一所有者，启动时由 AppStartupCoordinator 引导（先于内核激活插件）。
+            serviceCollection.AddSingleton<IDiscoveryExclusionPolicy, DiscoveryExclusionPolicy>();
             serviceCollection.AddSingleton<IWindowCaptureService, WindowCaptureService>();
             serviceCollection.AddSingleton<WindowInventoryCache>();
             serviceCollection.AddSingleton<IWindowInventoryCoordinator>(sp =>

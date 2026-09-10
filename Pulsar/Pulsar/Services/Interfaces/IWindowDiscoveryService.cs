@@ -54,23 +54,6 @@ namespace Pulsar.Services.Interfaces
         Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int processId);
 
         /// <summary>
-        /// 更新窗口黑名单（用户自定义 + 系统默认）
-        /// </summary>
-        void UpdateBlacklist(IEnumerable<string> userBlacklist);
-
-        /// <summary>
-        /// 原子替换用户窗口排除/放行规则（身份维度：类名 / 标题正则 / 矩形状态，进程名作限定）。
-        /// 对所有消费面生效，包括显式激活。
-        /// </summary>
-        void UpdateEligibilityRules(IReadOnlyList<WindowEligibilityRule> rules);
-
-        /// <summary>启用窗口切换诊断日志（默认关闭，避免热路径额外开销）。</summary>
-        void SetSwitchDiagnosticsEnabled(bool enabled);
-
-        /// <summary>当前生效的用户规则（有序）。</summary>
-        IReadOnlyList<WindowEligibilityRule> GetEligibilityRules();
-
-        /// <summary>
         /// 枚举全部顶层窗口并返回每窗口的"可切换"判定报告（含原因），供 Window Inspector 诊断。
         /// </summary>
         Task<IReadOnlyList<WindowEligibilityReport>> GetWindowEligibilityReportAsync();

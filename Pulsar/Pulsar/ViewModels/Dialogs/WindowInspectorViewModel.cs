@@ -19,17 +19,15 @@ namespace Pulsar.ViewModels.Dialogs
     /// <summary>
     /// Window Inspector：列出全部顶层窗口的"可切换"判定报告（含原因），支持
     /// 定位（闪烁）与一键排除（生成最具体的身份规则并运行时 + 持久化双写）。
-    /// 只依赖 <see cref="IWindowService"/> 与 <see cref="IConfigService"/>，可 Mock 单测。
+    /// 排除规则的读写经由 <see cref="IDiscoveryExclusionPolicy"/> 单一所有者（[W2]），
+    /// 判定报告与闪烁仍走 <see cref="IWindowService"/>。
     /// </summary>
     public partial class WindowInspectorViewModel : ObservableObject, IDialogViewModel
     {
-        public const string WinSwitcherPluginId = "com.pulsar.winswitcher";
-
         private readonly IWindowService _windowService;
-        private readonly IConfigService _configService;
+        private readonly IDiscoveryExclusionPolicy _exclusionPolicy;
         private readonly ILocalizationService? _loc;
         private readonly ILogger<WindowInspectorViewModel>? _logger;
-        private readonly Func<IReadOnlyList<WindowEligibilityRule>, Task> _persistRules;
         private List<WindowEligibilityRule> _rules = new();
 
         [ObservableProperty]
@@ -52,22 +50,20 @@ namespace Pulsar.ViewModels.Dialogs
 
         public WindowInspectorViewModel(
             IWindowService windowService,
-            IConfigService configService,
+            IDiscoveryExclusionPolicy exclusionPolicy,
             ILocalizationService? loc = null,
-            ILogger<WindowInspectorViewModel>? logger = null,
-            Func<IReadOnlyList<WindowEligibilityRule>, Task>? persistRules = null)
+            ILogger<WindowInspectorViewModel>? logger = null)
         {
             _windowService = windowService;
-            _configService = configService;
+            _exclusionPolicy = exclusionPolicy;
             _loc = loc;
             _logger = logger;
-            _persistRules = persistRules ?? PersistRulesAsync;
         }
 
         /// <summary>对话框打开前调用：加载当前规则 + 首次枚举。</summary>
         public async Task InitializeAsync()
         {
-            _rules = _windowService.GetEligibilityRules().ToList();
+            _rules = _exclusionPolicy.Rules.ToList();
             UpdateRuleSummary();
             await RefreshAsync();
         }
@@ -118,9 +114,20 @@ namespace Pulsar.ViewModels.Dialogs
                 _rules.Add(rule);
             }
 
-            // 运行时立即生效（本次会话）+ 持久化到 WinSwitcher 的 ExcludeRules 设置（下次启动/保存同步）。
-            _windowService.UpdateEligibilityRules(_rules);
-            await _persistRules(_rules);
+            // [W2] 运行时立即生效 + 持久化由 Discovery Exclusion Policy 单点完成
+            //（先应用后持久化：持久化失败时规则本次会话仍生效，这里呈现降级提示）。
+            try
+            {
+                await _exclusionPolicy.SetRulesAsync(_rules);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[WindowInspector] Failed to persist ExcludeRules");
+                StatusMessage = _loc?["Inspector.PersistFailed"] ?? "Rule is active for this session, but saving to disk failed.";
+                UpdateRuleSummary();
+                await RefreshAsync();
+                return;
+            }
 
             StatusMessage = string.Format(
                 _loc?["Inspector.ExcludedFormat"] ?? "Excluded '{0}' ({1})",
@@ -134,22 +141,6 @@ namespace Pulsar.ViewModels.Dialogs
         private void Close()
         {
             RequestClose?.Invoke(DialogResult.Confirmed);
-        }
-
-        /// <summary>默认持久化：写入 WinSwitcher 插件配置的 ExcludeRules（走 ConfigEditSession 单写者通道）。</summary>
-        private async Task PersistRulesAsync(IReadOnlyList<WindowEligibilityRule> rules)
-        {
-            var json = WindowEligibilityRuleSerializer.Serialize(rules);
-            try
-            {
-                await ConfigEditSession.RunAsync(_configService, session =>
-                    session.UpdatePluginProfile(WinSwitcherPluginId, profile => profile.Config["ExcludeRules"] = json));
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[WindowInspector] Failed to persist ExcludeRules");
-                StatusMessage = _loc?["Inspector.PersistFailed"] ?? "Rule is active for this session, but saving to disk failed.";
-            }
         }
 
         private void UpdateRuleSummary()

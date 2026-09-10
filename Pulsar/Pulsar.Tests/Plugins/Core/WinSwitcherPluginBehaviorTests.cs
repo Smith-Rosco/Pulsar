@@ -89,13 +89,14 @@ namespace Pulsar.Tests.Plugins.Core
         }
 
         [Fact]
-        public void UpdateSettings_ShouldToggleSwitchDiagnostics()
+        public void UpdateSettings_ShouldDelegateToDiscoveryExclusionPolicy()
         {
-            var (plugin, windowService, _) = CreateInitializedPlugin();
+            var (plugin, _, _, policy) = CreateInitializedPlugin();
+            var settings = new Dictionary<string, object> { ["EnableSwitchDiagnostics"] = true };
 
-            plugin.UpdateSettings(new Dictionary<string, object> { ["EnableSwitchDiagnostics"] = true });
+            plugin.UpdateSettings(settings);
 
-            windowService.Verify(s => s.SetSwitchDiagnosticsEnabled(true), Times.Once);
+            policy.Verify(p => p.ApplyFromConfig(settings), Times.Once);
         }
 
         [Fact]
@@ -112,17 +113,17 @@ namespace Pulsar.Tests.Plugins.Core
         }
 
         [Fact]
-        public void UpdateSettings_WithExcludeRules_ShouldPushParsedRulesToWindowService()
+        public void UpdateSettings_WithExcludeRules_ShouldDelegateToDiscoveryExclusionPolicy()
         {
-            var (plugin, windowService, _) = CreateInitializedPlugin();
-
-            plugin.UpdateSettings(new Dictionary<string, object>
+            var (plugin, _, _, policy) = CreateInitializedPlugin();
+            var settings = new Dictionary<string, object>
             {
                 ["ExcludeRules"] = "[{\"Allow\":false,\"WindowClass\":\"GhostClass\"}]"
-            });
+            };
 
-            windowService.Verify(s => s.UpdateEligibilityRules(It.Is<IReadOnlyList<WindowEligibilityRule>>(rules =>
-                rules.Count == 1 && rules[0].WindowClass == "GhostClass")), Times.Once);
+            plugin.UpdateSettings(settings);
+
+            policy.Verify(p => p.ApplyFromConfig(settings), Times.Once);
         }
 
         [Fact]
@@ -166,9 +167,23 @@ namespace Pulsar.Tests.Plugins.Core
         }
 
         [Fact]
+        public void Initialize_WithoutExclusionPolicy_ShouldThrow()
+        {
+            var windowService = new Mock<IWindowService>();
+            var services = new Mock<IServiceProvider>();
+            services.Setup(s => s.GetService(typeof(IWindowService))).Returns(windowService.Object);
+            services.Setup(s => s.GetService(typeof(IProcessLauncher))).Returns(new Mock<IProcessLauncher>().Object);
+
+            var act = () => new WinSwitcherPlugin().Initialize(services.Object);
+
+            act.Should().Throw<InvalidOperationException>()
+                .WithMessage("*IDiscoveryExclusionPolicy*");
+        }
+
+        [Fact]
         public async Task Launch_MissingPath_ShouldReturnRecoverableMissingParameter()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin();
+            var (plugin, _, launcher, _) = CreateInitializedPlugin();
 
             var result = await plugin.ExecuteAsync("launch", new Dictionary<string, string>(), PulsarContextStub);
 
@@ -181,7 +196,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Launch_RelativePath_ShouldReturnInvalidConfiguration()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin();
+            var (plugin, _, launcher, _) = CreateInitializedPlugin();
 
             var result = await plugin.ExecuteAsync("launch", new Dictionary<string, string> { ["path"] = "notepad.exe" }, PulsarContextStub);
 
@@ -194,7 +209,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Launch_FileNotFound_ShouldReturnNotFound()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin();
+            var (plugin, _, launcher, _) = CreateInitializedPlugin();
             var missingPath = Path.Combine(Path.GetTempPath(), $"pulsar-winswitcher-missing-{Guid.NewGuid():N}.exe");
 
             var result = await plugin.ExecuteAsync("launch", new Dictionary<string, string> { ["path"] = missingPath }, PulsarContextStub);
@@ -208,7 +223,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Launch_UnsupportedExtension_ShouldReturnInvalidConfiguration()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin();
+            var (plugin, _, launcher, _) = CreateInitializedPlugin();
             var txtPath = CreateTempLaunchFile(".txt");
             try
             {
@@ -228,7 +243,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Launch_ValidFile_ShouldStartProcessThroughLauncher()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin();
+            var (plugin, _, launcher, _) = CreateInitializedPlugin();
             var exePath = CreateTempLaunchFile(".exe");
             try
             {
@@ -255,7 +270,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Launch_WhenLauncherThrowsFileNotFound_ShouldMapToRecoverableNotFound()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin();
+            var (plugin, _, launcher, _) = CreateInitializedPlugin();
             var exePath = CreateTempLaunchFile(".exe");
             launcher.Setup(l => l.Launch(It.IsAny<ProcessStartInfo>()))
                 .Throws(new FileNotFoundException("gone", exePath));
@@ -276,7 +291,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Launch_WhenLauncherThrowsUnauthorizedAccess_ShouldMapToCriticalAccessDenied()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin();
+            var (plugin, _, launcher, _) = CreateInitializedPlugin();
             var exePath = CreateTempLaunchFile(".exe");
             launcher.Setup(l => l.Launch(It.IsAny<ProcessStartInfo>()))
                 .Throws(new UnauthorizedAccessException("denied"));
@@ -297,7 +312,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Launch_WhenLauncherThrowsWin32Exception_ShouldMapToRecoverableExecutionFailed()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin();
+            var (plugin, _, launcher, _) = CreateInitializedPlugin();
             var exePath = CreateTempLaunchFile(".exe");
             launcher.Setup(l => l.Launch(It.IsAny<ProcessStartInfo>()))
                 .Throws(new Win32Exception(2, "cannot find the file"));
@@ -318,7 +333,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Launch_WhenLauncherThrowsUnexpected_ShouldMapToCriticalExecutionFailed()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin();
+            var (plugin, _, launcher, _) = CreateInitializedPlugin();
             var exePath = CreateTempLaunchFile(".exe");
             launcher.Setup(l => l.Launch(It.IsAny<ProcessStartInfo>()))
                 .Throws(new InvalidOperationException("boom"));
@@ -339,7 +354,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Switch_Success_ShouldNotLaunch()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin(switchSucceeded: true);
+            var (plugin, _, launcher, _) = CreateInitializedPlugin(switchSucceeded: true);
 
             var result = await plugin.ExecuteAsync("switch", new Dictionary<string, string>
             {
@@ -354,7 +369,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Switch_FailWithPath_ShouldLaunchThroughLauncher()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin(switchSucceeded: false);
+            var (plugin, _, launcher, _) = CreateInitializedPlugin(switchSucceeded: false);
             var exePath = CreateTempLaunchFile(".exe");
             try
             {
@@ -376,7 +391,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Switch_FailWithoutPath_ShouldReturnNotFound()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin(switchSucceeded: false);
+            var (plugin, _, launcher, _) = CreateInitializedPlugin(switchSucceeded: false);
 
             var result = await plugin.ExecuteAsync("switch", new Dictionary<string, string> { ["app"] = "chrome" }, PulsarContextStub);
 
@@ -389,7 +404,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Switch_MissingApp_ShouldReturnMissingParameter()
         {
-            var (plugin, _, launcher) = CreateInitializedPlugin();
+            var (plugin, _, launcher, _) = CreateInitializedPlugin();
 
             var result = await plugin.ExecuteAsync("switch", new Dictionary<string, string>(), PulsarContextStub);
 
@@ -402,7 +417,7 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public async Task Activate_Fail_ShouldReturnNotFound()
         {
-            var (plugin, _, _) = CreateInitializedPlugin(switchSucceeded: false);
+            var (plugin, _, _, _) = CreateInitializedPlugin(switchSucceeded: false);
 
             var result = await plugin.ExecuteAsync("activate", new Dictionary<string, string> { ["app"] = "chrome" }, PulsarContextStub);
 
@@ -413,19 +428,22 @@ namespace Pulsar.Tests.Plugins.Core
 
         private static PulsarContext PulsarContextStub => TestHelpers.PulsarContextFactory.CreateTestContext();
 
-        private static (WinSwitcherPlugin Plugin, Mock<IWindowService> WindowService, Mock<IProcessLauncher> Launcher) CreateInitializedPlugin(
+        private static (WinSwitcherPlugin Plugin, Mock<IWindowService> WindowService, Mock<IProcessLauncher> Launcher, Mock<IDiscoveryExclusionPolicy> Policy) CreateInitializedPlugin(
             bool switchSucceeded = false)
         {
             var windowService = new Mock<IWindowService>();
             windowService.Setup(s => s.SwitchToProcessAsync(It.IsAny<string>())).ReturnsAsync(switchSucceeded);
             var launcher = new Mock<IProcessLauncher>();
+            var policy = new Mock<IDiscoveryExclusionPolicy>();
+            policy.SetupGet(p => p.Rules).Returns(new List<WindowEligibilityRule>());
             var services = new Mock<IServiceProvider>();
             services.Setup(s => s.GetService(typeof(IWindowService))).Returns(windowService.Object);
             services.Setup(s => s.GetService(typeof(IProcessLauncher))).Returns(launcher.Object);
+            services.Setup(s => s.GetService(typeof(IDiscoveryExclusionPolicy))).Returns(policy.Object);
 
             var plugin = new WinSwitcherPlugin();
             plugin.Initialize(services.Object);
-            return (plugin, windowService, launcher);
+            return (plugin, windowService, launcher, policy);
         }
 
         private static string CreateTempLaunchFile(string extension)

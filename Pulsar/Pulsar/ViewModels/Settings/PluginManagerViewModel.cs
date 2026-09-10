@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.WindowSwitching;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Data;
@@ -72,6 +73,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IScriptValidationService? _scriptValidationService;
         private readonly ExampleLibraryService? _exampleLibraryService;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
+        private readonly IDiscoveryExclusionPolicy? _exclusionPolicy;
         private readonly ILocalizationService? _loc;
 
         public ObservableCollection<PluginViewModel> Plugins { get; } = new();
@@ -98,7 +100,8 @@ namespace Pulsar.ViewModels.Settings
             IWindowService? windowService = null, IProcessRegistryService? processRegistryService = null,
             IScriptFileService? scriptFileService = null, IScriptValidationService? scriptValidationService = null,
             ExampleLibraryService? exampleLibraryService = null,
-            IPluginMetadataRegistry? metadataRegistry = null)
+            IPluginMetadataRegistry? metadataRegistry = null,
+            IDiscoveryExclusionPolicy? exclusionPolicy = null)
         {
             _registry = registry;
             _runtimeOps = runtimeOps ?? throw new ArgumentNullException(nameof(runtimeOps));
@@ -114,6 +117,7 @@ namespace Pulsar.ViewModels.Settings
             _scriptValidationService = scriptValidationService;
             _exampleLibraryService = exampleLibraryService;
             _metadataRegistry = metadataRegistry;
+            _exclusionPolicy = exclusionPolicy;
             _loc = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
 
             FilterOptions =
@@ -183,7 +187,7 @@ namespace Pulsar.ViewModels.Settings
                     _loc!, _usageTracker, _healthMonitor, _logService, _dialogService,
                     _itemLogger, _windowService, _processRegistryService,
                     _scriptFileService, _scriptValidationService, _exampleLibraryService,
-                    _metadataRegistry));
+                    _metadataRegistry, _exclusionPolicy));
             }
 
             if (Plugins.Any())

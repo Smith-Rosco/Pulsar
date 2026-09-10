@@ -7,6 +7,7 @@ using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.WindowSwitching;
 using Pulsar.ViewModels.Base;
 using Pulsar.ViewModels.Settings;
 using DialogButtons = Pulsar.Models.Enums.DialogButtons;
@@ -19,6 +20,7 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly PluginViewModel _pluginViewModel;
         private readonly IWindowService? _windowService;
         private readonly IConfigService? _configService;
+        private readonly IDiscoveryExclusionPolicy? _exclusionPolicy;
         private readonly ILocalizationService? _loc;
 
         [ObservableProperty]
@@ -51,11 +53,13 @@ namespace Pulsar.ViewModels.Dialogs
             PluginViewModel pluginViewModel,
             IWindowService? windowService = null,
             IConfigService? configService = null,
-            ILocalizationService? loc = null)
+            ILocalizationService? loc = null,
+            IDiscoveryExclusionPolicy? exclusionPolicy = null)
         {
             _pluginViewModel = pluginViewModel;
             _windowService = windowService;
             _configService = configService;
+            _exclusionPolicy = exclusionPolicy;
             _loc = loc;
             
             _title = $"Configure {pluginViewModel.Name}";
@@ -115,7 +119,7 @@ namespace Pulsar.ViewModels.Dialogs
 
             var inspector = new WindowInspectorViewModel(
                 _windowService,
-                _configService ?? _pluginViewModel.ConfigService,
+                _exclusionPolicy ?? throw new InvalidOperationException("IDiscoveryExclusionPolicy is not available"),
                 _loc);
 
             await inspector.InitializeAsync();

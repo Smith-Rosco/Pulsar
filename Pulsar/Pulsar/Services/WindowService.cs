@@ -32,7 +32,9 @@ namespace Pulsar.Services
         private readonly IWindowInventoryCoordinator _inventoryCoordinator;
         private readonly IWindowCaptureService _captureService;
         private readonly Func<IntPtr, bool> _isWindow;
-        private volatile bool _switchDiagnosticsEnabled;
+        // [W2] 切换诊断开关由 Discovery Exclusion Policy 持有（ExcludeProcesses/ExcludeRules/
+        // EnableSwitchDiagnostics 三个键的单一所有者）；WindowService 只读。
+        private readonly IDiscoveryExclusionPolicy? _exclusionPolicy;
 
         // [New] 状态管理字段
         private Action? _hideMainWindowAction;
@@ -69,7 +71,8 @@ namespace Pulsar.Services
             ILoggerFactory? loggerFactory = null,
             ITrayService? trayService = null,
             ILocalizationService? loc = null,
-            Func<IntPtr, bool>? isWindow = null)
+            Func<IntPtr, bool>? isWindow = null,
+            IDiscoveryExclusionPolicy? exclusionPolicy = null)
         {
             _logger = logger;
             _focusManager = focusManager;
@@ -78,6 +81,7 @@ namespace Pulsar.Services
             _trayService = trayService;
             _loc = loc;
             _isWindow = isWindow ?? PulsarNative.IsWindow;
+            _exclusionPolicy = exclusionPolicy;
             using (var currentProcess = Process.GetCurrentProcess())
             {
                 _currentProcessId = currentProcess.Id;
@@ -159,30 +163,6 @@ namespace Pulsar.Services
 
             RecordWindowActivation(evt.Hwnd);
         }
-        
-        /// <summary>
-        /// Updates the dynamic blacklist (merges with system blacklist). Delegates to
-        /// the eligibility evaluator, which owns the blacklist state + predicate.
-        /// </summary>
-        public void UpdateBlacklist(IEnumerable<string> userBlacklist)
-        {
-            _eligibilityEvaluator.UpdateBlacklist(userBlacklist);
-            _logger.LogInformation("[WindowService] Blacklist updated via eligibility evaluator");
-        }
-
-        /// <summary>
-        /// 原子替换用户窗口排除/放行规则（按身份维度匹配：类名 / 标题正则 / 矩形状态，进程名作限定）。
-        /// 规则对所有消费面生效（含显式激活），因为其语义是"这个窗口永远不是合法目标"。
-        /// </summary>
-        public void UpdateEligibilityRules(IReadOnlyList<WindowEligibilityRule> rules)
-        {
-            _eligibilityEvaluator.UpdateRules(rules);
-            _logger.LogInformation("[WindowService] Eligibility rules updated. Count: {Count}", _eligibilityEvaluator.Rules.Count);
-        }
-
-        /// <summary>当前生效的用户规则（有序，供 Inspector 展示与追加）。</summary>
-        public IReadOnlyList<WindowEligibilityRule> GetEligibilityRules()
-            => _eligibilityEvaluator.Rules;
 
         /// <summary>
         /// 枚举全部顶层窗口并给出每窗口的"可切换"判定报告（含标题 / 类名 / 矩形 / 原因），
@@ -675,7 +655,7 @@ namespace Pulsar.Services
                 return result;
             }
 
-            if (_switchDiagnosticsEnabled)
+            if (_exclusionPolicy?.DiagnosticsEnabled == true)
             {
                 foreach (var candidate in windows)
                 {
@@ -802,15 +782,9 @@ namespace Pulsar.Services
                 PulsarNotificationIcon.Warning);
         }
 
-        public void SetSwitchDiagnosticsEnabled(bool enabled)
-        {
-            _switchDiagnosticsEnabled = enabled;
-            _logger.LogInformation("[WindowSwitchDiagnostics] Enabled={Enabled}", enabled);
-        }
-
         private void LogSwitchDiagnostics(string stage, WindowEligibilitySnapshot snapshot, EligibilityResult? result)
         {
-            if (!_switchDiagnosticsEnabled)
+            if (_exclusionPolicy?.DiagnosticsEnabled != true)
             {
                 return;
             }

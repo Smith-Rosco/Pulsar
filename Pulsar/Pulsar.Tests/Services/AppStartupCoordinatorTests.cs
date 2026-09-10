@@ -19,6 +19,7 @@ using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.WindowSwitching;
 using Pulsar.Services.Validation;
 using Pulsar.ViewModels.Dialogs;
 using Pulsar.Views;
@@ -93,6 +94,7 @@ namespace Pulsar.Tests.Services
             public Mock<IPluginHealthMonitor> PluginHealthMonitor { get; } = new(MockBehavior.Strict);
             public Mock<IDebugStatePublisher> DebugStatePublisher { get; } = new(MockBehavior.Strict);
             public Mock<IDebugCommandServer> DebugCommandServer { get; } = new(MockBehavior.Strict);
+            public Mock<IDiscoveryExclusionPolicy> ExclusionPolicy { get; } = new();
             public List<string> CallOrder { get; } = new();
             public RecordingLogger CoordinatorLogger { get; } = new();
 
@@ -138,6 +140,9 @@ namespace Pulsar.Tests.Services
 
                 // IProcessRegistryService
                 ProcessRegistryService.Setup(p => p.InitializeAsync()).Returns(Task.CompletedTask).Callback(() => CallOrder.Add("ProcessRegistryInitialize"));
+
+                // IDiscoveryExclusionPolicy ([W2] bootstrap must precede core plugin activation)
+                ExclusionPolicy.Setup(p => p.InitializeFromConfig()).Callback(() => CallOrder.Add("ExclusionPolicyInitialized"));
 
                 // IHotkeyService
                 HotkeyService.Setup(h => h.InitializeAsync()).Returns(Task.CompletedTask).Callback(() => CallOrder.Add("HotkeyInitialize"));
@@ -238,6 +243,7 @@ namespace Pulsar.Tests.Services
                     wizardFactory,
                     debugStatePublisherFactory,
                     debugCommandServerFactory,
+                    exclusionPolicy: ExclusionPolicy.Object,
                     // Deterministic dispatcher: always null. The tutorial path then NREs
                     // at uiDispatcher.InvokeAsync regardless of whether a sibling test
                     // (ThemeServiceTests, SettingsSaveSessionTests, ... all do
@@ -366,6 +372,7 @@ namespace Pulsar.Tests.Services
                 "ProcessRegistryInitialize",
                 "TrayInitialize",
                 "BreakerRelayResolved",   // ADR-013: only AFTER tray init
+                "ExclusionPolicyInitialized",   // [W2]: bootstrap BEFORE any plugin activation
                 "LoadCoreAsync",
                 "MainWindowFactoryInvoked");
         }

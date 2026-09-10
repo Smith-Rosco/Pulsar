@@ -200,41 +200,9 @@ namespace Pulsar.Tests.Services
             }
         }
 
-        [Fact]
-        public void UpdateBlacklist_ShouldForwardEntriesToEvaluator()
-        {
-            var (service, evaluator, _, _, _, _, _) = CreateService();
-            try
-            {
-                service.UpdateBlacklist(new[] { "myapp" });
-
-                evaluator.Verify(e => e.UpdateBlacklist(
-                    It.Is<IEnumerable<string>>(entries => entries.Contains("myapp"))), Times.Once);
-            }
-            finally
-            {
-                service.Dispose();
-            }
-        }
-
-        [Fact]
-        public void UpdateEligibilityRules_ShouldPropagateToEvaluator()
-        {
-            var rules = new List<WindowEligibilityRule> { new(false, null, "GhostClass", null) };
-            var (service, evaluator, _, _, _, _, _) = CreateService();
-            try
-            {
-                evaluator.SetupGet(e => e.Rules).Returns(rules);
-
-                service.UpdateEligibilityRules(rules);
-
-                evaluator.Verify(e => e.UpdateRules(rules), Times.Once);
-            }
-            finally
-            {
-                service.Dispose();
-            }
-        }
+        // [W2] UpdateBlacklist / UpdateEligibilityRules 的转发测试已随 IWindowDiscoveryService
+        // 契约 shed 一并移除：应用链路收拢到 DiscoveryExclusionPolicy，由
+        // DiscoveryExclusionPolicyTests 以 evaluator 为直接对象覆盖。
 
         [Fact]
         public void OnWindowActivated_SameProcessHwnd_ShouldNotInvalidateInventory()

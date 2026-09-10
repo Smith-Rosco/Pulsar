@@ -11,6 +11,7 @@ using Serilog.Events;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.WindowSwitching;
 using Pulsar.Features.Tutorial.Services;
 using Pulsar.ViewModels.Dialogs;
 using Pulsar.Views;
@@ -56,6 +57,7 @@ namespace Pulsar.Services
         // sibling test that constructs `new Application()` (ThemeServiceTests etc.)
         // leaves a non-null Current whose dead Dispatcher makes InvokeAsync hang forever.
         private readonly Func<System.Windows.Threading.Dispatcher> _dispatcherProvider;
+        private readonly IDiscoveryExclusionPolicy? _exclusionPolicy;   // [W2] bootstrap before core plugin activation
 
         private readonly IBackgroundWorkScheduler _backgroundWorkScheduler;
         private readonly LoggingLevelSwitch _levelSwitch;
@@ -85,7 +87,8 @@ namespace Pulsar.Services
             Func<IDebugStatePublisher>? debugStatePublisherFactory = null,
             Func<IDebugCommandServer>? debugCommandServerFactory = null,
             Func<System.Windows.Threading.Dispatcher>? dispatcherProvider = null,
-            Lazy<Services.Updates.UpdateOrchestrator>? updateOrchestrator = null)
+            Lazy<Services.Updates.UpdateOrchestrator>? updateOrchestrator = null,
+            IDiscoveryExclusionPolicy? exclusionPolicy = null)
         {
             _configService = configService;
             _debugOptions = debugOptions;
@@ -121,6 +124,7 @@ namespace Pulsar.Services
                 "AppStartupCoordinator requires a Lazy<ITutorialService> from DI to avoid eager " +
                 "construction of TutorialOrchestrator and its 9 dependencies.");
             _updateOrchestrator = updateOrchestrator;
+            _exclusionPolicy = exclusionPolicy;
             _mainWindowFactory = mainWindowFactory ?? throw new InvalidOperationException(
                 "AppStartupCoordinator requires a Func<RadialMenuWindow> from DI to defer WPF " +
                 "InitializeComponent until after theme and tray are initialized.");
@@ -176,8 +180,21 @@ namespace Pulsar.Services
             _ = _breakerRelay.Value;
             _logger.LogInformation("[Startup] Circuit breaker notification relay activated");
 
+            // [W2] Discovery Exclusion Policy bootstrap：evaluator 必须在内核激活任何插件
+            // 之前持有持久化的排除状态（激活时的 UpdateSettings 应用随后成为幂等重放）。
+            if (_exclusionPolicy is { } exclusionPolicy)
+            {
+                exclusionPolicy.InitializeFromConfig();
+                _logger.LogInformation("[Startup] Discovery exclusion policy initialized from config");
+            }
+            else
+            {
+                _logger.LogWarning("[Startup] IDiscoveryExclusionPolicy not available; exclusion state applies only at plugin activation");
+            }
+
             await _pluginRegistry.LoadCoreAsync();
             _logger.LogInformation("[Startup] Core plugins activated");
+
 
             var mainWindow = _mainWindowFactory();
             mainWindow.Show();

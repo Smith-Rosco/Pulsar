@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Pulsar.Core;
 using Pulsar.Core.Focus;
@@ -13,6 +14,7 @@ using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.WindowSwitching;
 using Serilog;
 using Serilog.Formatting.Json;
 
@@ -83,6 +85,14 @@ namespace Pulsar.Simulator
             services.AddSingleton<IWindowActivationService>(sp => sp.GetRequiredService<IWindowService>());
             services.AddSingleton<IWindowFocusContextService>(sp => sp.GetRequiredService<IWindowService>());
             services.AddSingleton<IWindowShellService>(sp => sp.GetRequiredService<IWindowService>());
+
+            // [W2] WinSwitcherPlugin.Initialize fail-fast resolves the exclusion policy.
+            var mockEvaluator = new Mock<IWindowEligibilityEvaluator>();
+            services.AddSingleton(mockEvaluator.Object);
+            services.AddSingleton<IDiscoveryExclusionPolicy>(sp => new DiscoveryExclusionPolicy(
+                mockEvaluator.Object,
+                sp.GetRequiredService<IConfigService>(),
+                NullLogger<DiscoveryExclusionPolicy>.Instance));
 
             var mockFocusManager = new Mock<IFocusManager>();
             mockFocusManager.Setup(f => f.ActivateWindowAsync(It.IsAny<IntPtr>(), It.IsAny<FocusActivationOptions>()))

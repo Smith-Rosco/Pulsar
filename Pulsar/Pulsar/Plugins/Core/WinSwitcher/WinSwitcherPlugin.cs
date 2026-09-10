@@ -27,11 +27,10 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         // Initialized in Initialize() method with null check - guaranteed non-null after initialization
         private IWindowService _windowService = null!;
         private IProcessLauncher _processLauncher = null!;
+        private IDiscoveryExclusionPolicy _exclusionPolicy = null!;
         private ILogger<WinSwitcherPlugin>? _logger;
         private ITrayService? _trayService;
         private ILocalizationService? _loc;
-        private HashSet<string> _excludedProcesses = new();
-        private List<WindowEligibilityRule> _excludeRules = new();
 
         public string Id => "com.pulsar.winswitcher";
         public string DisplayName => "App Switch";
@@ -63,6 +62,15 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             if (_processLauncher == null)
             {
                 throw new InvalidOperationException("IProcessLauncher service is not available");
+            }
+
+            // [W2] 排除策略是独立于本插件生命周期的单一所有者：配置键解析/应用/持久化
+            // 都在那里，插件只负责把内核激活时的 profile 配置转交过去。
+            _exclusionPolicy = (services.GetService(typeof(IDiscoveryExclusionPolicy)) as IDiscoveryExclusionPolicy)!;
+
+            if (_exclusionPolicy == null)
+            {
+                throw new InvalidOperationException("IDiscoveryExclusionPolicy service is not available");
             }
 
             _logger?.LogInformation($"{LogPrefix} Initialized successfully");
@@ -106,42 +114,13 @@ namespace Pulsar.Plugins.Core.WinSwitcher
 
         public void UpdateSettings(Dictionary<string, object> settings)
         {
-            if (settings.TryGetValue("ExcludeProcesses", out var excludeObj) && excludeObj != null)
-            {
-                var excludeStr = excludeObj.ToString() ?? string.Empty;
-                _excludedProcesses = excludeStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                               .Select(p => p.Trim())
-                                               .ToHashSet(StringComparer.OrdinalIgnoreCase);
-                
-                // [New] Update WindowService blacklist
-                _windowService?.UpdateBlacklist(_excludedProcesses);
-            }
-
-            if (settings.TryGetValue("ExcludeRules", out var rulesObj) && rulesObj != null)
-            {
-                var rulesJson = rulesObj.ToString() ?? string.Empty;
-                var rules = WindowEligibilityRuleSerializer.TryParse(rulesJson);
-                if (rules != null)
-                {
-                    _excludeRules = rules;
-                    _windowService?.UpdateEligibilityRules(_excludeRules);
-                }
-                else
-                {
-                    _logger?.LogWarning($"{LogPrefix} ExcludeRules JSON is invalid and was ignored");
-                }
-            }
-
-            if (settings.TryGetValue("EnableSwitchDiagnostics", out var diagnosticsObj)
-                && bool.TryParse(diagnosticsObj?.ToString(), out var diagnosticsEnabled))
-            {
-                _windowService?.SetSwitchDiagnosticsEnabled(diagnosticsEnabled);
-            }
+            // [W2] 本插件不再是排除策略的 relay：解析（逗号拆分 / JSON 规则 / 布尔开关）
+            // 与运行时应用全部收拢到 Discovery Exclusion Policy（含启动引导与 Inspector 写入）。
+            _exclusionPolicy.ApplyFromConfig(settings);
 
             _logger?.LogInformation(
-                $"{LogPrefix} Settings updated. ExcludedCount={{ExcludedCount}}, RuleCount={{RuleCount}}",
-                _excludedProcesses.Count,
-                _excludeRules.Count);
+                $"{LogPrefix} Settings applied via discovery exclusion policy. RuleCount={{RuleCount}}",
+                _exclusionPolicy.Rules.Count);
         }
 
         public PluginConfigValidationResult ValidateSettings(Dictionary<string, object> settings)
@@ -197,31 +176,18 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         public async Task OnEnableAsync()
         {
             _logger?.LogInformation($"{LogPrefix} Plugin enabled");
-            
-            // 重新同步黑名单到 WindowService
-            if (_excludedProcesses.Count > 0)
-            {
-                _windowService?.UpdateBlacklist(_excludedProcesses);
-                _logger?.LogDebug($"{LogPrefix} Blacklist synchronized: {{Count}} entries", _excludedProcesses.Count);
-            }
 
-            // 重新同步排除规则到 WindowService
-            if (_excludeRules.Count > 0)
-            {
-                _windowService?.UpdateEligibilityRules(_excludeRules);
-                _logger?.LogDebug($"{LogPrefix} Exclusion rules synchronized: {{Count}} entries", _excludeRules.Count);
-            }
-            
+            // [W2] 无需重新同步：策略状态由 AppStartupCoordinator 在插件激活前引导、
+            // 由内核 ApplyProfileAsync 的 UpdateSettings 调用应用，两者先于/伴随 OnEnable。
             await Task.CompletedTask;
         }
-        
+
         public async Task OnDisableAsync()
         {
             _logger?.LogInformation($"{LogPrefix} Plugin disabled");
-            
-            // 清空黑名单（恢复默认系统黑名单）
-            _windowService?.UpdateBlacklist(Enumerable.Empty<string>());
-            
+
+            // [W2] 有意不清理：排除策略独立于插件生命周期，用户的排除偏好（黑名单与规则）
+            // 比插件活得更久。这也消除了旧实现"清黑名单但留规则"的不对称。
             await Task.CompletedTask;
         }
         
