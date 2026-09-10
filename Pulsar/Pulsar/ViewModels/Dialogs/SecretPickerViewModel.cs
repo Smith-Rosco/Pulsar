@@ -7,8 +7,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Localization;
 using Pulsar.Helpers;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -25,9 +25,9 @@ namespace Pulsar.ViewModels.Dialogs
     public partial class SecretPickerViewModel : ObservableObject, IDialogViewModel
     {
         private readonly ILocalizationService _loc;
-        private readonly IPkiSecretStore _secretStore;
+        private readonly ISecretStore _secretStore;
         private readonly ISecretProtector _secretProtector;
-        private readonly IPkiSecretMetadataResolver _metadataResolver;
+        private readonly ISecretFillMetadataResolver _metadataResolver;
         private readonly Dictionary<Guid, SecretPayload> _pendingSecrets;
         private readonly Dictionary<Guid, string> _labelMap;
         private readonly IDialogService? _dialogService;
@@ -61,9 +61,9 @@ namespace Pulsar.ViewModels.Dialogs
 
         /// <param name="labelMap">Map of secretId -> legacy slot label for secrets created before labels were stored.</param>
         public SecretPickerViewModel(
-            IPkiSecretStore secretStore,
+            ISecretStore secretStore,
             ISecretProtector secretProtector,
-            IPkiSecretMetadataResolver metadataResolver,
+            ISecretFillMetadataResolver metadataResolver,
             ILocalizationService localizationService,
             Dictionary<Guid, SecretPayload> pendingSecrets,
             Dictionary<Guid, string> labelMap,
@@ -136,7 +136,7 @@ namespace Pulsar.ViewModels.Dialogs
             if (addResult == DialogResult.Confirmed)
             {
                 var secretId = Guid.NewGuid();
-                var payload = new Plugins.Core.Pki.Models.SecretPayload
+                var payload = new Plugins.Core.SecretFill.Models.SecretPayload
                 {
                     Label = vm.Label,
                     Account = vm.Account,

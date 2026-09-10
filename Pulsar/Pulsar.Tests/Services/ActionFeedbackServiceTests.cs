@@ -75,7 +75,7 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
-        public void Create_ShouldRedactPkiFailureMessage_FromRawSensitiveDetails()
+        public void Create_ShouldRedactSecretFillFailureMessage_FromRawSensitiveDetails()
         {
             var rawMessage = "Secret not found: 01234567-89ab-cdef-0123-456789abcdef";
 

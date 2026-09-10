@@ -320,7 +320,7 @@
     },
     {
       "id": "claim_f3fd739a491d44ba8f8428e08523dd91",
-      "statement": "SlotEditorWorkspace stages secrets in PendingSecrets (mutated in place by the secret picker and QuickSecretsViewModel), tracks persisted secrets separately, and supports ResolveSecretDisplay via IPkiSecretMetadataResolver against both maps; Save merges PendingSecrets into the secret store before committing the config, and ReplacePersistedSecrets adopts the merged map as the new baseline.",
+      "statement": "SlotEditorWorkspace stages secrets in PendingSecrets (mutated in place by the secret picker and QuickSecretsViewModel), tracks persisted secrets separately, and supports ResolveSecretDisplay via ISecretFillMetadataResolver against both maps; Save merges PendingSecrets into the secret store before committing the config, and ReplacePersistedSecrets adopts the merged map as the new baseline.",
       "evidence": [
         {
           "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SettingsEditorSession.cs#L78-L95",

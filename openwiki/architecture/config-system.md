@@ -28,7 +28,7 @@ sources:
   - id: openwiki-source-518d8749f2742b670216c408
     resource: repo://Pulsar/Pulsar/Models/ProfilesConfig.cs
   - id: openwiki-source-919c86fc2517614071ce6c73
-    resource: repo://Pulsar/Pulsar/Plugins/Core/Pki/Services/CredentialsManager.cs
+    resource: repo://Pulsar/Pulsar/Plugins/Core/SecretFill/Services/CredentialsManager.cs
   - id: openwiki-source-72e33040550b349789a6d47b
     resource: repo://Pulsar/Pulsar/Services/AppStartupCoordinator.cs
   - id: openwiki-source-508925bbe84f143f3d2a3721
@@ -205,7 +205,7 @@ Live secrets (`secrets.json` beside `Profiles.json` in `%AppData%\Pulsar`) are D
 - `ConfigService` is registered in `App.xaml.cs` with a `configPath` override in ui-debug mode, redirecting `Profiles.json` to the isolated debug directory so a debug run never touches production config.
 - `ConfigEditSession` is not a service — callers construct it over the injected `IConfigService`. Its main consumers: `SettingsEditorSession` (the Settings window's persistence seam: begin/lazy-begin/commit plus the secret-store pipeline), `PresetInstallService`, `PluginRuntimeKernel` (permission grants, enable/disable), `ProcessRegistryService` (blacklist sync), `TutorialService`/`TutorialOrchestrator`/`OnboardingState` (tutorial progress and skip flags), `FirstLaunchSetupWizardViewModel`, `WindowInspectorViewModel`, and `CreateProfileStrategy`.
 - `SettingsEditorSession.CommitAsync` also saves the merged secret store (`SecretRepository` → `secrets.json`, with IO retry) before committing the config draft — the Settings window commits config and secrets as one logical save.
-- The secret stack is registered in `AddPluginFoundation`: `ISecretProtector` → `CredentialsManager` (DPAPI) and `IPkiSecretStore` → `SecretRepository` (`secrets.json` in the same AppData folder, read/write with 3 IO retries).
+- The secret stack is registered in `AddPluginFoundation`: `ISecretProtector` → `CredentialsManager` (DPAPI) and `ISecretStore` → `SecretRepository` (`secrets.json` in the same AppData folder, read/write with 3 IO retries).
 - `AppStartupCoordinator` wires the validation pipeline into the concrete `ConfigService` during deferred startup (after plugin discovery), and `AboutViewModel` is the UI entry point for backup/restore via `IConfigBackupService`.
 
 ## Failure Modes and Invariants

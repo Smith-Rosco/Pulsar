@@ -187,13 +187,16 @@ ADRs are immutable once accepted; supersede rather than edit.
 | [026](./decisions/026-installer-inno-setup-no-trim.md) | Installer (Inno Setup) — no IL trimming |
 | [027](./decisions/027-documentation-structure-v6-single-authoritative-sources.md) | Documentation structure v6 — single authoritative sources, full index registry |
 | [028](./decisions/028-window-history-single-authority.md) | Window history single authority — MenuPrevious + MRU stack in one module |
+| [029](./decisions/029-settings-transient-pages.md) | Settings transient pages — per-type singleton, clean-leave auto-recycle |
+| [030](./decisions/030-wheel-radius-single-formula.md) | Wheel radius single formula — `CalculateOptimalLayout` derives radius from `CalculateOptimalSlotSize(N)` |
+| [031](./decisions/031-secret-fill-rename-plugin-id-frozen.md) | PKI module renamed to Secret Fill — symbols only, plugin id `com.pulsar.pki` frozen |
 
 ---
 
 ## Plugin Documentation (`plugins/`)
 
 - **[WinSwitcher](./plugins/WinSwitcher.md)** — window switching and application launching
-- **[PkiPlugin](./plugins/PkiPlugin.md)** — PKI credential management (Core plugin)
+- **[SecretFillPlugin](./plugins/SecretFillPlugin.md)** — Secret Fill credential management (Core plugin)
 - **[BasicCommand](./plugins/BasicCommand.md)** — basic command execution
 - **[SystemCommand](./plugins/SystemCommand.md)** — system command execution
 - **[BookmarkletRunner](./plugins/BookmarkletRunner.md)** — bookmarklet runner

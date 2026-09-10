@@ -44,11 +44,11 @@ In debug mode the system SHALL publish internal runtime state to a named pipe so
 
 ### Requirement: Sensitive Content Redaction
 
-In debug mode the system SHALL redact or mask sensitive PKI/secret content in screenshots, recordings, and state published to the named pipe, so debug artifacts do not leak secret material.
+In debug mode the system SHALL redact or mask sensitive SecretFill/secret content in screenshots, recordings, and state published to the named pipe, so debug artifacts do not leak secret material.
 
-#### Scenario: PKI UI redacted in capture
-- **WHEN** a screenshot or recording is captured in debug mode and the PKI area is visible
-- **THEN** the PKI content is masked or excluded from the captured output
+#### Scenario: Secret Fill UI redacted in capture
+- **WHEN** a screenshot or recording is captured in debug mode and the Secret Fill area is visible
+- **THEN** the Secret Fill content is masked or excluded from the captured output
 
 ### Requirement: Verbose Diagnostics
 

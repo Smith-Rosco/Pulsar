@@ -11,8 +11,8 @@ using Pulsar.Core.Messages;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Helpers;
 using Pulsar.Models;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Plugins.Core.SystemCommand;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Validation;
@@ -71,7 +71,7 @@ namespace Pulsar.ViewModels.Settings
     public partial class SlotEditorWorkspace : ObservableObject
     {
         private readonly IPluginMetadataRegistry _metadataRegistry;
-        private readonly IPkiSecretMetadataResolver _secretMetadataResolver;
+        private readonly ISecretFillMetadataResolver _secretMetadataResolver;
         private readonly Func<ValidationResult?> _validationResultProvider;
         private readonly IMessenger _messenger;
         private readonly ISmartSubActionDefaults? _smartDefaults;
@@ -108,7 +108,7 @@ namespace Pulsar.ViewModels.Settings
 
         public SlotEditorWorkspace(
             IPluginMetadataRegistry metadataRegistry,
-            IPkiSecretMetadataResolver secretMetadataResolver,
+            ISecretFillMetadataResolver secretMetadataResolver,
             Func<ValidationResult?> validationResultProvider,
             Action<string, IReadOnlyList<PluginSlot>> writeSlotList,
             IMessenger? messenger = null,

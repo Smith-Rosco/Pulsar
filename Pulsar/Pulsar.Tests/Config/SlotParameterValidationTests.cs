@@ -49,10 +49,10 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
-        public async Task ValidateAsync_ShouldAcceptAliasParameterForPki()
+        public async Task ValidateAsync_ShouldAcceptAliasParameterForSecretFill()
         {
             var registry = new PluginMetadataRegistry(Mock.Of<ILogger<PluginMetadataRegistry>>());
-            registry.Register(CreatePkiMetadata());
+            registry.Register(CreateSecretFillMetadata());
 
             var pipeline = new ConfigValidationPipeline(
                 Mock.Of<IPluginRegistry>(),
@@ -135,15 +135,15 @@ namespace Pulsar.Tests.Config
             };
         }
 
-        private static PluginMetadata CreatePkiMetadata()
+        private static PluginMetadata CreateSecretFillMetadata()
         {
             return new PluginMetadata
             {
                 Id = "com.pulsar.pki",
                 Display = new DisplayInfo
                 {
-                    Name = "PKI",
-                    Description = "PKI",
+                    Name = "SecretFill",
+                    Description = "SecretFill",
                     IconKey = "lock",
                     Category = "Security",
                     Version = "1.0.0",

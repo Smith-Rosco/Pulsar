@@ -6,7 +6,7 @@ Pulsar brings two weapons against legacy systems:
 
 | Weapon | Use case | Plugin |
 | :--- | :--- | :--- |
-| 🔐 **Secure fill & sign-in** | Account/password login, form filling, auto submit | Secret Fill (PkiPlugin) |
+| 🔐 **Secure fill & sign-in** | Account/password login, form filling, auto submit | Secret Fill (SecretFillPlugin) |
 | 🌐 **Web scripts** | Custom automation on legacy intranet pages | Web Scripts (BookmarkletRunner) |
 
 ## 1. Secure Fill & Sign-In

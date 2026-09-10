@@ -437,7 +437,7 @@ _logger?.LogError(ex, "Error occurred");
 查看内置插件源码学习：
 - `Pulsar/Plugins/Extensions/BasicCommand/` - 基础命令插件（简单）
 - `Pulsar/Plugins/Extensions/VbaRunner/` - VBA 运行器（复杂，含 XAML）
-- `Pulsar/Plugins/Core/Pki/` - PKI 凭证管理插件（Core 插件）
+- `Pulsar/Plugins/Core/SecretFill/` - Secret Fill 凭证管理插件（Core 插件）
 
 ## 🆘 常见问题
 

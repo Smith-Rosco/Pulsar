@@ -13,7 +13,7 @@ namespace Pulsar.Services.Interfaces
         void RegisterHideAction(System.Action hideAction);
 
         /// <summary>
-        /// 强制隐藏主窗口 (用于 PKI 注入前的清场)
+        /// 强制隐藏主窗口 (用于 SecretFill 注入前的清场)
         /// </summary>
         void HideMainWindow();
     }

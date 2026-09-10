@@ -10,7 +10,7 @@ Settings → About → **Configuration Backup** lets a user export or restore th
 Pulsar configuration as a single ZIP package:
 
 - `Profiles.json` — the full config snapshot (profiles, slots, hotkeys, plugin settings).
-- `secrets.json` — the PKI credential store, **when the user opts in**.
+- `secrets.json` — the Secret Fill credential store, **when the user opts in**.
 
 Backups are versioned (`manifest.json` → `formatVersion`), so a future format can
 reject old readers / be migrated forward instead of silently misreading.
@@ -61,7 +61,7 @@ the password blob is protected.
   `ImportAsync`; `InspectAsync` reads a package without applying it so the UI can
   prompt for the password and show a summary first.
 - `ConfigBackupService` (`Services/`) — implementation; depends only on
-  `IConfigService`, `IPkiSecretStore`, `ISecretProtector` (all already registered).
+  `IConfigService`, `ISecretStore`, `ISecretProtector` (all already registered).
 - `AboutViewModel` — export/import commands, file dialogs, option/password dialogs,
   localized error mapping.
 - Tests: `Pulsar.Tests/Services/ConfigBackupServiceTests.cs` (round-trip, password

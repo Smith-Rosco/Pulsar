@@ -9,8 +9,8 @@
 
 ## 问题描述
 
-`Pulsar/Pulsar/Core/Debug/DebugModeOptions.cs` 与 `DebugPkiRedaction.cs`
-（`--ui-debug` 模式与 PKI 脱敏的核心类型）在开发会话中正常创建、正常编译，
+`Pulsar/Pulsar/Core/Debug/DebugModeOptions.cs` 与 `DebugSecretFillRedaction.cs`
+（`--ui-debug` 模式与 Secret Fill 脱敏的核心类型）在开发会话中正常创建、正常编译，
 但**从未进入任何 git 提交**：全仓库历史 `git grep -S "DebugModeOptions"` 只有使用点
 （`App.xaml.cs` / `AppStartupCoordinator.cs` / 测试），没有定义点。结果 main 分支
 **无法编译**（`CS0234: 命名空间"Pulsar.Core"中不存在类型或命名空间名"Debug"`），
@@ -56,7 +56,7 @@
 非 0（未被忽略），`git status` 应列出该目录。
 
 本次同时**重建**了这两个丢失文件（从全部使用点还原 API：`FromArgs`/`Disabled`/
-`IsUiDebug`/`EnableHotkeyHooks`/管道与配置目录命名对齐 E2E 客户端、`DebugPkiRedaction`
+`IsUiDebug`/`EnableHotkeyHooks`/管道与配置目录命名对齐 E2E 客户端、`DebugSecretFillRedaction`
 的 `RedactSecretDisplay`/`RedactAccount`），main 恢复可编译（0 警告 0 错误）。
 
 ## 修改的文件
@@ -65,7 +65,7 @@
 |------|---------|
 | `.gitignore` | 新增 `!Pulsar/Pulsar/Core/Debug/` 重新包含源码目录 |
 | `Pulsar/Pulsar/Core/Debug/DebugModeOptions.cs` | **重建**（丢失文件的还原实现） |
-| `Pulsar/Pulsar/Core/Debug/DebugPkiRedaction.cs` | **重建**（丢失文件的还原实现） |
+| `Pulsar/Pulsar/Core/Debug/DebugSecretFillRedaction.cs` | **重建**（丢失文件的还原实现） |
 
 ## 架构教训
 

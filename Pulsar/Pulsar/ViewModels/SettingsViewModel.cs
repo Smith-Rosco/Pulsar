@@ -14,8 +14,8 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Messages;
 using Pulsar.Core.Plugin.Metadata;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services;
@@ -44,9 +44,9 @@ namespace Pulsar.ViewModels
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly IProcessRegistryService? _processRegistryService;
         private readonly Services.Interfaces.ICustomIconStore? _customIconStore;
-        private readonly IPkiSecretStore _secretStore;
+        private readonly ISecretStore _secretStore;
         private readonly ISecretProtector _secretProtector;
-        private readonly IPkiSecretMetadataResolver _secretMetadataResolver;
+        private readonly ISecretFillMetadataResolver _secretMetadataResolver;
         private readonly IPluginMetadataRegistry _pluginMetadataRegistry;
         private readonly SettingsShellViewModel _settingsShell;
         private readonly ILogger<SettingsViewModel> _logger;
@@ -199,9 +199,9 @@ namespace Pulsar.ViewModels
             IHotkeyService hotkeyService,
             IDialogService dialogService,
             IFuzzySearchService<IconItem> searchService,
-            IPkiSecretStore secretStore,
+            ISecretStore secretStore,
             ISecretProtector secretProtector,
-            IPkiSecretMetadataResolver secretMetadataResolver,
+            ISecretFillMetadataResolver secretMetadataResolver,
             IPluginMetadataRegistry pluginMetadataRegistry,
             SettingsShellViewModel settingsShell,
             ILogger<SettingsViewModel> logger,
@@ -426,7 +426,7 @@ namespace Pulsar.ViewModels
                 if (CurrentSlots.Count > 0) nextSlot = CurrentSlots.Max(s => s.Slot) + 1;
 
                 var secretId = Guid.NewGuid();
-                var payload = new Plugins.Core.Pki.Models.SecretPayload
+                var payload = new Plugins.Core.SecretFill.Models.SecretPayload
                 {
                     Label = vm2.Label,
                     Account = vm2.Account,
@@ -897,7 +897,7 @@ namespace Pulsar.ViewModels
 
             _slotEditor.CommitCreatedSlot(createdSlot);
 
-            // P2 Fix: If the newly created slot is a PKI slot and secretId is still empty,
+            // P2 Fix: If the newly created slot is a SecretFill slot and secretId is still empty,
             // immediately open the secret picker so the user can link a secret.
             if (createdSlot.PluginId == "com.pulsar.pki"
                 && (!createdSlot.Args.TryGetValue("secretId", out var sid) || string.IsNullOrEmpty(sid)))

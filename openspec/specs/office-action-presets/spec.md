@@ -16,7 +16,7 @@ The system SHALL define a preset-pack model that bundles all configuration for a
 #### Scenario: Pack can define multiple command slots
 - **WHEN** a preset pack is defined with multiple command slot templates
 - **THEN** all templates SHALL be installable as command slots
-- **AND** the templates SHALL target existing plugin actions (e.g. VBA runner `run`, PKI fill, bookmarklet `run`) without requiring new plugin contracts
+- **AND** the templates SHALL target existing plugin actions (e.g. VBA runner `run`, Secret Fill, bookmarklet `run`) without requiring new plugin contracts
 
 ### Requirement: Built-in preset pack catalog
 The system SHALL maintain a catalog of first-party preset packs, register the initial set (Excel/WPS macro templates, common form fills, sign-in flows), and support lookup by ID and enumeration.
@@ -47,10 +47,10 @@ The system SHALL install a preset pack by writing its command slots into the Glo
 - **THEN** the write SHALL follow the existing revision-conflict rebase path instead of silently overwriting the other change
 
 ### Requirement: Pack install gates permissions before writing slots
-The system SHALL evaluate a pack's permission requirements before installing; when the pack references capabilities such as PKI or web-script execution, the install SHALL not proceed until the user grants the required permissions.
+The system SHALL evaluate a pack's permission requirements before installing; when the pack references capabilities such as Secret Fill or web-script execution, the install SHALL not proceed until the user grants the required permissions.
 
 #### Scenario: Ungranted permissions block pack install
-- **WHEN** a pack requires PKI permissions that the user has not granted
+- **WHEN** a pack requires Secret Fill permissions that the user has not granted
 - **THEN** the install SHALL be blocked with a permission prompt
 - **AND** no slots SHALL be written to the configuration until granted
 

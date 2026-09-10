@@ -9,7 +9,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 **Pulsar** is a high-performance productivity launcher for Windows featuring a radial menu interface.
 
 - **Framework**: .NET 8.0 (WPF + WinForms), MVVM (CommunityToolkit.Mvvm) + Dependency Injection
-- **Core Features**: Radial Menu, Global Hotkeys, PKI/Secret Management, Extensible Plugin System
+- **Core Features**: Radial Menu, Global Hotkeys, SecretFill / Secret Management, Extensible Plugin System
 - **Key Primitives**:
   - **PulsarContext**: Immutable context snapshot captured at radial menu invocation (lazy-loaded). Per-execution correlation data (PluginId, Action, ExecutionId) lives in stack-scoped `PluginExecutionContext` (AsyncLocal), never on `PulsarContext`.
   - **Plugin Tiers**: Core (essential, fail-fast) vs Extension (optional, Circuit Breaker: 3 crashes in 1 min = 60s disable)
@@ -68,7 +68,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 | Modify UI (XAML) | [Docs/guides/UI_BEST_PRACTICES.md](./Docs/guides/UI_BEST_PRACTICES.md), [Docs/guides/COMPONENT_LIBRARY.md](./Docs/guides/COMPONENT_LIBRARY.md) |
 | Radial Menu interaction/state | `ViewModels/MenuSession.cs` (state machine), `ViewModels/RadialMenuViewModel.cs` (thin binding projection). Strategies depend on `IMenuSession`, never the VM. [008-menu-session-refactor.md](./Docs/decisions/008-menu-session-refactor.md) |
 | Config persistence/writes | `ConfigService.cs` + `ConfigEditSession.cs`. `GetSnapshot()` = deep copy, never mutate; all writes via `ConfigEditSession` (revision-guarded). [009](./Docs/decisions/009-config-snapshot-seam.md), [005](./Docs/decisions/005-config-single-writer.md) |
-| Input injection (PKI) | [Docs/architecture/INPUT_INJECTION.md](./Docs/architecture/INPUT_INJECTION.md) |
+| Input injection (Secret Fill) | [Docs/architecture/INPUT_INJECTION.md](./Docs/architecture/INPUT_INJECTION.md) |
 | WPF UI issues | [Docs/lessons/](./Docs/lessons/) |
 | Prove a UI/runtime defect fix (animation, layout overflow) | `.agents/skills/pulsar-ui-runtime-verification/SKILL.md` — evidence over eyeballing: temp trace → self-driven E2E clicks → before/after signature diff; when layout is unmeasurable headless (`ActualWidth == 0`) pin it with a static XAML guard |
 | Architectural decisions / docs standards | [Docs/decisions/](./Docs/decisions/), [Docs/CONTRIBUTING.md](./Docs/CONTRIBUTING.md) — **Document routing** (spec vs ADR vs lessons vs journal) |
@@ -85,7 +85,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 
 - C# 12 / .NET 8.0, NRT enabled, Allman braces, 4-space indent, UTF-8.
 - Naming: types `PascalCase` · interfaces `I`+`PascalCase` · methods `PascalCase` (+`Async`) · props `PascalCase` · fields `_camelCase` · params/locals `camelCase` · handlers `On[EventName]`.
-- Structure: `Core/` (interfaces, base types) · `Plugins/Core/` (essential: PKI, Hotkey) · `Plugins/` (extensions) · `Services/` · `ViewModels/` · `Views/` (XAML) · `Helpers/` · `Models/`.
+- Structure: `Core/` (interfaces, base types) · `Plugins/Core/` (essential: SecretFill, Hotkey) · `Plugins/` (extensions) · `Services/` · `ViewModels/` · `Views/` (XAML) · `Helpers/` · `Models/`.
 - **DI**: constructor injection, register in `App.xaml.cs`. Plugin runtime = three narrow seams over `PluginRuntimeKernel` (ADR-012) — inject the **narrowest seam**, never the concrete class:
   - `IPluginRegistry` (register/discover/activate/query) · `IPluginExecutor` (ExecuteAsync) · `IPluginRuntimeOps` (rescan/deactivate/grant/unload).
 - Circuit breaker is a **pure state machine** (ADR-013): no `ITrayService` / `IPluginHealthMonitor` / `ILocalizationService` injection; it announces `Tripped` / `Recovered`; side effects belong to `PluginBreakerNotificationService` (activated in `AppStartupCoordinator` after tray init).
@@ -104,7 +104,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 - **Add a Dialog**: `IDialogViewModel` in `ViewModels/Dialogs/` → UserControl in `Views/Dialogs/Contents/` → **register DataTemplate in `Views/Dialogs/DialogHostWindow.xaml`** → `DialogService.ShowCustomAsync<T>()` with `DialogSizeConstraints`. Deep dive: [Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md).
 - **Add a Settings Page**: permanent → register in `SettingsPageCatalog` + factory creator + resx title key; transient (dynamic tab, opened on demand from a card's "配置详情" button) → define via `ITransientPageService.RegisterDefinition` in `App.xaml.cs` with `isTransient: true` (singleton, auto-recycled on clean leave). Save flows keep going through `SettingsEditorSession` (`MarkDirty()` → window-level Save). Deep dive: [029-settings-transient-pages.md](./Docs/decisions/029-settings-transient-pages.md).
 - **Modify UI (XAML)**: find view in `Views/` → bind to VM → `StaticResources` from `Themes/Theme.*.xaml` → `ApplyTheme()` after `InitializeComponent()` → Pulsar button styles. Deep dive: [Docs/guides/UI_BEST_PRACTICES.md](./Docs/guides/UI_BEST_PRACTICES.md).
-- **Secrets (PKI)**: `PkiPlugin` (`Plugins/Core/Pki/`) + `CredentialsManager`; `[JsonIgnore]` on sensitive data models.
+- **Secrets (Secret Fill)**: `SecretFillPlugin` (`Plugins/Core/SecretFill/`) + `CredentialsManager`; `[JsonIgnore]` on sensitive data models.
 
 **Conditional loading** (ADR-022): scenario-specific instructions (test / release / openspec) belong in skills or `.opencode/commands` slash-commands, **not** in this always-on file.
 

@@ -4,7 +4,7 @@ using System;
 using FluentAssertions;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Helpers;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Models;
 using Xunit;
 

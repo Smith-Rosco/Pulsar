@@ -16,7 +16,7 @@ namespace Pulsar.Services
         /// <summary>老旧网页脚本（Bookmarklet Runner）。</summary>
         WebScripts,
 
-        /// <summary>安全表单填写 / 签名（PKI）。</summary>
+        /// <summary>安全表单填写 / 签名（SecretFill）。</summary>
         SecureFill
     }
 
@@ -28,7 +28,7 @@ namespace Pulsar.Services
     {
         public const string VbaRunnerPluginId = "com.pulsar.vbarunner";
         public const string BookmarkletPluginId = "com.pulsar.bookmarklet";
-        public const string PkiPluginId = "com.pulsar.pki";
+        public const string SecretFillPluginId = "com.pulsar.pki";
 
         /// <summary>设置导航中的工作台页（支柱组），顺序即展示顺序。</summary>
         public static readonly IReadOnlyList<string> PillarPageIds =
@@ -42,7 +42,7 @@ namespace Pulsar.Services
         [
             VbaRunnerPluginId,
             BookmarkletPluginId,
-            PkiPluginId
+            SecretFillPluginId
         ];
 
         /// <summary>支柱首次启动场景（Excel 宏 → 网页脚本）。未列出的场景（如 notepad）属于背景组。</summary>

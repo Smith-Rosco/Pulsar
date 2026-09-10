@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Services;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using System;

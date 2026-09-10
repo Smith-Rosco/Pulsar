@@ -28,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **插件使用详情「下钻」对话框**（2026-09-10 用户批准计划）：分析页使用统计行的**整行点击**或行内**详情按钮**（`AutomationId=Pulsar.Settings.Analytics.DetailsButton`）打开单插件详情——头部（图标/名称/ID/版本/作者/描述/层级）、4 项汇总度量（执行次数/成功率/平均耗时/最近使用）、近 7 天趋势柱状图（复用分析页迷你柱视觉，`BarHeight ×5` 放大到 72px）、槽位分布（槽位号/次数/占比，按槽位号排序）、模式分布、单插件推荐。数据全部复用分析页已构建的内存快照（`AnalyticsItem`），无新查询、无副作用；插件静态元数据经 `IPluginRegistry.GetDescriptor` 补全，推荐经 `IPluginRecommendationEngine.GetRecommendationsForPlugin`（两者均为可选依赖，缺失时优雅降级隐藏对应区块）。新增 `PluginAnalyticsDetailViewModel` + `PluginAnalyticsDetailContent`（XAML 内容 + Host，注册于 `Themes/DialogTemplates.xaml`），9 个双语 resx 键。新增测试 21 例（详情 VM 18 + 分析页 VM 下钻命令 3）。全量 **1521/1521**（1500 + 21）。E2E `settings-analytics-detail-dark` 实测 **PASS 27.6s**（16 步，低干扰模式；UIA 树确认对话框全内容渲染）。
 
+### Changed
+- **`PKI` 模块更名 `Secret Fill`——层 1/2/4 改名，层 3（插件 ID）逐字冻结**（ADR-031，Accepted）：`PKI` = Public Key Infrastructure（CA / X.509 / 非对称密钥对），而本模块实为 **DPAPI 加密的凭据存储 + 队列化 SendKeys 注入**（零证书、零密钥对）——名字语义错误而非仅不直观。目录 `Plugins/Core/{Pki→SecretFill}/`、命名空间 `Pulsar.Plugins.Core.SecretFill`、`PkiPlugin→SecretFillPlugin`、`IPkiSecretStore→ISecretStore`、`IPkiExecutionService→ISecretFillExecutionService`、`IPkiSecretMetadataResolver→ISecretFillMetadataResolver`、`PkiExecutionResult/Stage→SecretFill*`、`PkiPluginSettings→SecretFillPluginSettings`、`DebugPkiRedaction→DebugSecretFillRedaction`（共 70 文件，`git mv` 保留历史）。**`com.pulsar.pki` 保持逐字不变**——它持久化在用户 `%AppData%\Pulsar\Profiles.json` 的 slot `plugin` 字段（实测 5 处），改 ID 需配置迁移 + 旧 ID 别名读路径，而用户只看得到 `AutoFill` 显示名，收益为零。`secrets.json` 按 GUID 关联不含插件 ID（实测 0 处）→ **无需密钥迁移**。内置插件无 `manifest.json`，`PluginLoader.IsManifestEntryPointMatch` 对空 `EntryPoint` 短路 `return true` → 命名空间改名安全。**历史记录不改写**（`CHANGELOG` / `RELEASE_NOTES-*` / `Docs/archive` / `Docs/journal` / `openspec/changes`）；`CONTEXT.md` 术语表新增 `Secret Fill`（`_Avoid_: PKI`）与 `Plugin Id` 条目；`openspec/specs/**` 活跃规格内容同步（目录名 `pki-*` 保留不动）。→ `Docs/decisions/031-secret-fill-rename-plugin-id-frozen.md`
+
+### Fixed
+- 无
+
 ## [1.13.1] - 2026-09-10
 
 ### Changed

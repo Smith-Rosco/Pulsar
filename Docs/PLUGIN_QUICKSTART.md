@@ -358,7 +358,7 @@ public class MyPlugin : IPulsarPlugin
 ## 📚 示例项目
 
 查看完整示例:
-- `Plugins/Core/Pki/` - PKI 插件（核心插件示例）
+- `Plugins/Core/SecretFill/` - Secret Fill 插件（核心插件示例）
 - `Plugins/Extensions/BasicCommand/` - 基础命令插件（扩展插件示例）
 
 ---

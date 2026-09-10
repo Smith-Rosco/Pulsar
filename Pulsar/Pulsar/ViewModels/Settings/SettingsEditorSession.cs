@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Pulsar.Models;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 
@@ -29,7 +29,7 @@ namespace Pulsar.ViewModels.Settings
     public sealed class SettingsEditorSession
     {
         private readonly IConfigService _configService;
-        private readonly IPkiSecretStore _secretStore;
+        private readonly ISecretStore _secretStore;
 
         /// <summary>
         /// Raised on every user-visible draft change, so dirty tracking is a property
@@ -41,7 +41,7 @@ namespace Pulsar.ViewModels.Settings
 
         public SettingsEditorSession(
             IConfigService configService,
-            IPkiSecretStore secretStore,
+            ISecretStore secretStore,
             Action? onDraftMutated = null)
         {
             _configService = configService;

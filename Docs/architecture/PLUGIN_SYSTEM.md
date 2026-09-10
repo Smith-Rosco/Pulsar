@@ -17,7 +17,7 @@ Pulsar uses a plugin-based architecture where the core application is responsibl
 
 | Tier | Description | Characteristics | Examples |
 |------|-------------|-----------------|----------|
-| **Core Plugin** | Essential infrastructure plugins | - Cannot be disabled<br>- Crash causes app exit<br>- No Circuit Breaker protection<br>- Located in `Plugins/Core/` | PKI, Hotkey management |
+| **Core Plugin** | Essential infrastructure plugins | - Cannot be disabled<br>- Crash causes app exit<br>- No Circuit Breaker protection<br>- Located in `Plugins/Core/` | SecretFill, Hotkey management |
 | **Extension Plugin** | Optional feature plugins | - Can be disabled<br>- Crash isolation<br>- Circuit Breaker protection<br>- Located in `Plugins/` | WinSwitcher, VbaRunner, BookmarkletRunner |
 
 ---

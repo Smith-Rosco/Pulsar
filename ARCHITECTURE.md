@@ -23,7 +23,7 @@ Pulsar triggers two independent modes via different hotkeys, with strictly isola
 
 #### 1. Command Mode - `Ctrl + Shift + Q`
 * **Logic**: Based on currently active window (context), loads statically configured actions
-* **Use Cases**: Execute VBA scripts, fill passwords (PKI), data transformation, etc.
+* **Use Cases**: Execute VBA scripts, fill passwords (Secret Fill), data transformation, etc.
 * **Layout**: Strictly corresponds to `Profiles.json` configuration, position does not change with usage frequency
 
 #### 2. Switch Mode - `Ctrl + Q`
@@ -63,7 +63,7 @@ Plugin interfaces (`IPulsarPlugin`, `IPluginTiered`, `IPluginMetadataProvider`, 
 
 ### 3.3 Focus Management (Focus Boomerang)
 
-**Problem**: When PKI plugin injects credentials, focus must return to the original window.
+**Problem**: When Secret Fill plugin injects credentials, focus must return to the original window.
 
 **Solution**: Focus Boomerang pattern
 
@@ -89,7 +89,7 @@ SendKeys.SendWait(password);
 
 ---
 
-### 3.4 Storage Strategy (PKI Module)
+### 3.4 Storage Strategy (Secret Fill Module)
 
 **Split Storage** for security:
 

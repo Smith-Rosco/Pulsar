@@ -17,11 +17,11 @@ The system SHALL order settings navigation so that entries belonging to the offi
 - **THEN** the navigation SHALL present the same entry order each time, independent of configuration-edit state
 
 ### Requirement: Plugin management list surfaces the three pillars first
-The system SHALL order and group the plugin management list so that the three office-automation pillars (VBA/macro runner, web-script runner, PKI form-fill) appear in a leading group, with system/utility plugins grouped in a separate trailing group.
+The system SHALL order and group the plugin management list so that the three office-automation pillars (VBA/macro runner, web-script runner, SecretFill form-fill) appear in a leading group, with system/utility plugins grouped in a separate trailing group.
 
 #### Scenario: Pillar plugins render in the leading group
 - **WHEN** the plugin management page renders the plugin list
-- **THEN** the pillar plugins (VBA/macro, web-script, form-fill/PKI) SHALL appear in the leading group ahead of system utility plugins
+- **THEN** the pillar plugins (VBA/macro, web-script, form-fill/SecretFill) SHALL appear in the leading group ahead of system utility plugins
 
 #### Scenario: System plugins render in a separate trailing group
 - **WHEN** the plugin management page renders the plugin list

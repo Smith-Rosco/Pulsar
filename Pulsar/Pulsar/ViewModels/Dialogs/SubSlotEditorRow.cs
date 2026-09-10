@@ -7,7 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.ViewModels.Dialogs

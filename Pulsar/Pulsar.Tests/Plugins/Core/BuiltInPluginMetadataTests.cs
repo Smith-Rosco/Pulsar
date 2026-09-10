@@ -3,8 +3,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
-using Pulsar.Plugins.Core.Pki;
-using Pulsar.Plugins.Core.Pki.Contracts;
+using Pulsar.Plugins.Core.SecretFill;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
 using Pulsar.Plugins.Core.SystemCommand;
 using Pulsar.Plugins.Core.WinSwitcher;
 using Pulsar.Plugins.Extensions.Command;
@@ -56,9 +56,9 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public void SecretFillMetadata_ShouldExposeCanonicalActionAndLegacyAlias()
         {
-            var executionService = new Mock<IPkiExecutionService>();
+            var executionService = new Mock<ISecretFillExecutionService>();
             var loc = new Mock<ILocalizationService>();
-            var plugin = new PkiPlugin(NullLogger<PkiPlugin>.Instance, loc.Object, executionService.Object);
+            var plugin = new SecretFillPlugin(NullLogger<SecretFillPlugin>.Instance, loc.Object, executionService.Object);
 
             var metadata = plugin.GetMetadata();
 

@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Localization;
-using Pulsar.Plugins.Core.Pki;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Services;
+using Pulsar.Plugins.Core.SecretFill;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Services;
 using Pulsar.Services.ActionFeedback;
 using Pulsar.Models;
 using Pulsar.Native;
@@ -163,8 +163,8 @@ namespace Pulsar
 
             Log.Logger = loggerConfig.CreateLogger();
 
-            // [UI Debug Mode] Arm PKI/secret display redaction for capture output.
-            DebugPkiRedaction.IsActive = debugOptions.IsUiDebug;
+            // [UI Debug Mode] Arm SecretFill/secret display redaction for capture output.
+            DebugSecretFillRedaction.IsActive = debugOptions.IsUiDebug;
 
             Log.Information("=== Pulsar Application Starting (Log Level: {Level}) ===", levelSwitch.MinimumLevel);
             if (debugOptions.IsUiDebug)
@@ -196,7 +196,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<IPluginMetadataRegistry, PluginMetadataRegistry>();
 
             // [UI Debug Mode] Expose the parsed debug options to every service that
-            // needs to branch on them (startup coordinator, PKI redaction, ...).
+            // needs to branch on them (startup coordinator, SecretFill redaction, ...).
             serviceCollection.AddSingleton(debugOptions);
 
             // [UI Debug Mode] Redirect Profiles.json to the isolated Pulsar.Debug

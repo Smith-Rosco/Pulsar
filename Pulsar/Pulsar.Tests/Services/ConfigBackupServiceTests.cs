@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Pulsar.Models;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
-using Pulsar.Plugins.Core.Pki.Services;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
+using Pulsar.Plugins.Core.SecretFill.Services;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 

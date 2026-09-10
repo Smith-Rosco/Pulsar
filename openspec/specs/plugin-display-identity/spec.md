@@ -32,7 +32,7 @@ Built-in plugin descriptions SHALL explain what the user can accomplish with the
 The system SHALL represent plugin identity through icon glyph and name only. Plugin accent color (`UIHints.AccentColor`) SHALL NOT be applied as a background color on icon containers in any settings or picker surface. The `AccentColor` field is retained in the data model but is reserved for future non-icon uses.
 
 #### Scenario: Plugin card on settings page does not show accent-colored icon background
-- **WHEN** the Plugins settings page displays a plugin card for any plugin (e.g. WinSwitcher, PKI, VbaRunner)
+- **WHEN** the Plugins settings page displays a plugin card for any plugin (e.g. WinSwitcher, Secret Fill, VbaRunner)
 - **THEN** the icon background SHALL be the standard neutral theme fill and SHALL NOT be the plugin's `AccentColor` hex value
 
 #### Scenario: AccentColor field is present but not visually applied

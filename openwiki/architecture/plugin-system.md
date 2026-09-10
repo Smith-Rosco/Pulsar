@@ -60,7 +60,7 @@ Every plugin carries a `PluginTier` (declared via `IPluginTiered` or derived fro
 
 | Tier | Failure semantics | Disable-ability | Examples |
 |---|---|---|---|
-| **Core** | Crashes are **fatal**: the pipeline routes exceptions/timeouts to `ICorePluginFailureHandler`; the default `RethrowCorePluginFailureHandler` rethrows the original exception. No circuit-breaker protection. | Cannot be disabled — `SetPluginStateAsync` refuses, `IsPluginEnabled` always returns true | PKI (`com.pulsar.pki`), WinSwitcher (`com.pulsar.winswitcher`) |
+| **Core** | Crashes are **fatal**: the pipeline routes exceptions/timeouts to `ICorePluginFailureHandler`; the default `RethrowCorePluginFailureHandler` rethrows the original exception. No circuit-breaker protection. | Cannot be disabled — `SetPluginStateAsync` refuses, `IsPluginEnabled` always returns true | Secret Fill (`com.pulsar.pki`), WinSwitcher (`com.pulsar.winswitcher`) |
 | **Extension** | Crashes are **isolated**: the circuit breaker counts failures, opens the circuit, and blocks further execution for the cooldown. | Can be disabled per user profile | VbaRunner, BookmarkletRunner, Command |
 
 The tier gates every decision point in the pipeline: `PluginCircuitBreakerPolicy.CheckAvailability` / `RecordSuccess` / `RecordFailure` are no-ops for Core plugins, and the pipeline branches on `descriptor.Tier` when a plugin throws, times out, or returns a Critical result. `PluginLoader.CreateExternalDescriptor` throws if an external package declares the Core tier — external packages can only ever be Extension plugins.

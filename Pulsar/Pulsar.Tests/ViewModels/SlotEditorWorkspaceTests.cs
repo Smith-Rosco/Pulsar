@@ -9,8 +9,8 @@ using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Helpers;
 using Pulsar.Models;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Validation;
@@ -277,7 +277,7 @@ namespace Pulsar.Tests.ViewModels
 
             return new SlotEditorWorkspace(
                 registry,
-                new Mock<IPkiSecretMetadataResolver>().Object,
+                new Mock<ISecretFillMetadataResolver>().Object,
                 () => null,
                 (key, slots) => sink.Add((key, slots.ToList())));
         }

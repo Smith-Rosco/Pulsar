@@ -11,7 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services;
 using Pulsar.ViewModels.Base;

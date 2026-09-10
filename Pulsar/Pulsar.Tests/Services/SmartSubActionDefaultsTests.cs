@@ -7,8 +7,8 @@ using Moq;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Services;
 using Pulsar.ViewModels.Settings;
 using Xunit;
@@ -145,7 +145,7 @@ namespace Pulsar.Tests.Services
 
             return new SlotEditorWorkspace(
                 registry,
-                new Mock<IPkiSecretMetadataResolver>().Object,
+                new Mock<ISecretFillMetadataResolver>().Object,
                 () => null,
                 (_, _) => { },
                 smartDefaults: new SmartSubActionDefaults());

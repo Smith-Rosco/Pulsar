@@ -10,8 +10,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Models;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Services
@@ -55,13 +55,13 @@ namespace Pulsar.Services
         };
 
         private readonly IConfigService _configService;
-        private readonly IPkiSecretStore _secretStore;
+        private readonly ISecretStore _secretStore;
         private readonly ISecretProtector _secretProtector;
         private readonly ILogger<ConfigBackupService> _logger;
 
         public ConfigBackupService(
             IConfigService configService,
-            IPkiSecretStore secretStore,
+            ISecretStore secretStore,
             ISecretProtector secretProtector,
             ILogger<ConfigBackupService> logger)
         {

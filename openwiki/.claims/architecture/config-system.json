@@ -325,7 +325,7 @@
       "statement": "Backup password protection exists because live secret blobs are DPAPI-sealed with DataProtectionScope.CurrentUser, binding them to one Windows user on one machine; with a password, Export decrypts each blob via the local protector and re-seals it with a PBKDF2-SHA256 (210,000 iterations, random 16-byte salt) derived AES-256-GCM key, and Import unseals and re-seals with the target machine's protector, making the backup portable. Only ciphertext is protected — Label/Account stay plaintext like the live store.",
       "evidence": [
         {
-          "resource": "repo://Pulsar/Pulsar/Plugins/Core/Pki/Services/CredentialsManager.cs#L12-L31",
+          "resource": "repo://Pulsar/Pulsar/Plugins/Core/SecretFill/Services/CredentialsManager.cs#L12-L31",
           "version": "repo-lines-v1:sha256:56e44ec6a4aea3cc4a2170022bc95e500e349b79c95ea652e3fdc87cef857070:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1OThhNWRiZjI1Nzc5YzViY2I1ZTcwOWVmYmQ5MjkyM2I2NmU0YWViZjNkMjZmMjAxMGU2NDY3NjVjNDI3YzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxMzVhNmJjNDc4YzdiNmQ4NDMzZDI2YWFiYjQ1Y2ZmZWVmZDJjYmNjNGU4N2ExM2JiZDkzNGI4ZmRmMmRkZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNTgzYWQ0OWUxZGU0OWVmN2NjNjQ1ODhkNWQwNDljMzQxNmMxMDEyYjU0Mzk0YmQ0NjhlMmFjYTQ5OWYwMzMifQ"
         },
         {

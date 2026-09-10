@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
 
 namespace Pulsar.Helpers
 {
     public static class SecretMetadataResolver
     {
-        private static readonly IPkiSecretMetadataResolver Resolver = new Pulsar.Plugins.Core.Pki.Services.PkiSecretMetadataResolver();
+        private static readonly ISecretFillMetadataResolver Resolver = new Pulsar.Plugins.Core.SecretFill.Services.SecretFillMetadataResolver();
 
         public static IReadOnlyDictionary<Guid, SecretPayload> Merge(
             IReadOnlyDictionary<Guid, SecretPayload>? persistedSecrets,

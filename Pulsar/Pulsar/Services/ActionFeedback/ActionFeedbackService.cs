@@ -106,8 +106,8 @@ namespace Pulsar.Services.ActionFeedback
 
         private ActionFeedback? CreateFromErrorCode(string pluginId, PluginErrorCode errorCode)
         {
-            // Pki keeps its credential-specific feedback kinds, now keyed off the
-            // stable ErrorCode produced by PkiPlugin's stage mapping instead of
+            // SecretFill keeps its credential-specific feedback kinds, now keyed off the
+            // stable ErrorCode produced by SecretFillPlugin's stage mapping instead of
             // matching on (bilingual) message needles.
             if (string.Equals(pluginId, "com.pulsar.pki", StringComparison.OrdinalIgnoreCase))
             {

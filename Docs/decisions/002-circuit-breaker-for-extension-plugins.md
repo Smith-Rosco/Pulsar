@@ -10,7 +10,7 @@
 
 Pulsar's plugin architecture allows third-party code to run within the main application process. A crashing plugin could bring down the entire application, resulting in poor user experience.
 
-Additionally, some plugins are essential (Core plugins like PKI), while others are optional features (Extension plugins like VbaRunner). The failure handling strategy should differ based on plugin criticality.
+Additionally, some plugins are essential (Core plugins like SecretFill), while others are optional features (Extension plugins like VbaRunner). The failure handling strategy should differ based on plugin criticality.
 
 ---
 
@@ -19,7 +19,7 @@ Additionally, some plugins are essential (Core plugins like PKI), while others a
 Implement a two-tier plugin architecture with different failure handling:
 
 ### Core Plugins
-- Essential infrastructure plugins (PKI, Hotkey management)
+- Essential infrastructure plugins (SecretFill, Hotkey management)
 - Cannot be disabled by users
 - Crashes are fatal (application exits)
 - No Circuit Breaker protection

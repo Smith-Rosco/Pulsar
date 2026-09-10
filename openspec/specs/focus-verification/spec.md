@@ -18,16 +18,16 @@ After `IFocusManager.ActivateWindowAsync()` completes and reports success, the c
 - **WHEN** `ActivateWindowAsync` fails verification after exhausting all retries
 - **THEN** the returned result SHALL have `Success = false`, `VerificationPassed = false`, and a `FailureReason` of `ForegroundSwitchFailed`
 
-### Requirement: PKI credential injection SHALL verify focus before injecting
-When the PKI injection executor restores focus to the target window before typing credentials, it SHALL request post-activation verification through `IFocusManager` and SHALL abort injection if verification fails.
+### Requirement: Secret Fill credential injection SHALL verify focus before injecting
+When the Secret Fill injection executor restores focus to the target window before typing credentials, it SHALL request post-activation verification through `IFocusManager` and SHALL abort injection if verification fails.
 
 #### Scenario: Focus verified before credential injection
-- **WHEN** the PKI injection plan reaches the `RestoreFocus` step
+- **WHEN** the Secret Fill injection plan reaches the `RestoreFocus` step
 - **THEN** the executor SHALL call `IFocusManager.ActivateWindowAsync(targetHandle, options with VerifyAfterActivation=true)` and SHALL only proceed to the injection step if verification passes
 
-#### Scenario: PKI injection aborted on verification failure
-- **WHEN** focus verification fails after the `RestoreFocus` step in a PKI injection plan
-- **THEN** the executor SHALL return a `PkiExecutionResult` with stage `FocusRestore` and SHALL NOT inject any credential text
+#### Scenario: Secret Fill injection aborted on verification failure
+- **WHEN** focus verification fails after the `RestoreFocus` step in a Secret Fill injection plan
+- **THEN** the executor SHALL return a `SecretFillExecutionResult` with stage `FocusRestore` and SHALL NOT inject any credential text
 
 ### Requirement: Activation verification SHALL respect configurable timing parameters
 The verification delay and retry count SHALL be configurable via `FocusActivationOptions` to accommodate applications with varying focus-transition latency.

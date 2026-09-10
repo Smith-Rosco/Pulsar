@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
-using Pulsar.Plugins.Core.Pki.Services.Input;
+using Pulsar.Plugins.Core.SecretFill.Services.Input;
 
 namespace Pulsar.Services.Simulation
 {
     /// <summary>
-    /// A no-op <see cref="ISendKeysWriter"/> that logs the intended PKI input
+    /// A no-op <see cref="ISendKeysWriter"/> that logs the intended SecretFill input
     /// instead of injecting it. Used by the headless simulator in dry-run mode.
     /// </summary>
     public sealed class DryRunSendKeysWriter : ISendKeysWriter

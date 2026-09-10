@@ -67,7 +67,7 @@ namespace Pulsar.Core.Plugin.Metadata
 
         /// <summary>
         /// 插件主程序集入口点（完全限定类型名）
-        /// 例如: "Pulsar.Plugins.Pki.PkiPlugin"
+        /// 例如: "Pulsar.Plugins.Core.SecretFill.SecretFillPlugin"
         /// </summary>
         [JsonPropertyName("entryPoint")]
         public string EntryPoint { get; set; } = string.Empty;

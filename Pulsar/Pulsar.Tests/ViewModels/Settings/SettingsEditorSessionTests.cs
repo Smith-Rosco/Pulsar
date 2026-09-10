@@ -7,8 +7,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Pulsar.Models;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Services;
 using Pulsar.ViewModels.Settings;
 using Xunit;
@@ -254,7 +254,7 @@ namespace Pulsar.Tests.ViewModels.Settings
             var calls = new List<int>();
             var store = new Dictionary<Guid, SecretPayload>();
 
-            var secretMock = new Mock<IPkiSecretStore>();
+            var secretMock = new Mock<ISecretStore>();
             secretMock.Setup(s => s.LoadAsync()).ReturnsAsync(() => new Dictionary<Guid, SecretPayload>(store));
             secretMock
                 .Setup(s => s.SaveAsync(It.IsAny<Dictionary<Guid, SecretPayload>>()))

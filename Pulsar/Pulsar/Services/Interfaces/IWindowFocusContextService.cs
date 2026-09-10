@@ -6,7 +6,7 @@ namespace Pulsar.Services.Interfaces
     /// <summary>
     /// Previously-active window recall, quick switch and focus boomerang.
     /// Consumers that only manage the context captured when Pulsar is invoked
-    /// (radial menu input, PKI focus restore) should depend on this narrow
+    /// (radial menu input, SecretFill focus restore) should depend on this narrow
     /// interface instead of the full IWindowService.
     /// </summary>
     public interface IWindowFocusContextService

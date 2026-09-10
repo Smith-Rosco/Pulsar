@@ -2,27 +2,27 @@
 
 **Status**: Published
 **Scope**: Architecture
-**Applies To**: PKI plugin, text injection scenarios, modifier key detection
+**Applies To**: Secret Fill plugin, text injection scenarios, modifier key detection
 **Last Updated**: 2026-03-27
 
 ---
 
 ## Overview
 
-Pulsar supports multiple input-injection techniques, but PKI credential fill now has an explicit architectural rule: multi-field PKI injection is SendKeys-first.
+Pulsar supports multiple input-injection techniques, but Secret Fill credential fill now has an explicit architectural rule: multi-field Secret Fill injection is SendKeys-first.
 
 This document distinguishes between:
 
 - general input-injection capabilities in the codebase
-- the stricter PKI credential-injection policy used by `com.pulsar.pki`
+- the stricter Secret Fill credential-injection policy used by `com.pulsar.pki`
 
 ---
 
-## PKI Injection Policy
+## Secret Fill Injection Policy
 
-For PKI credential fill, Pulsar uses a deterministic execution plan built by application services and executed through Windows adapters.
+For Secret Fill credential fill, Pulsar uses a deterministic execution plan built by application services and executed through Windows adapters.
 
-The supported PKI sequence is:
+The supported Secret Fill sequence is:
 
 1. hide the launcher
 2. restore focus to the captured target window
@@ -32,43 +32,43 @@ The supported PKI sequence is:
 6. send the password text
 7. optionally send `Enter`
 
-Why SendKeys-first for PKI:
+Why SendKeys-first for Secret Fill:
 
 - multi-field fill depends on queue-ordered key processing
 - UIA `SetValue` replaces content instead of behaving like typed input
 - rapid focus transitions make UIA unreliable for account -> tab -> password flows
 - SendKeys respects the OS input queue and matches the proven runtime behavior
 
-For PKI, UIA-first execution is not a supported policy.
+For Secret Fill, UIA-first execution is not a supported policy.
 
 ---
 
-## PKI Layering
+## Secret Fill Layering
 
-PKI runtime execution is split into these layers:
+Secret Fill runtime execution is split into these layers:
 
 ### Plugin Adapter
 
-`PkiPlugin` is a thin adapter responsible for:
+`SecretFillPlugin` is a thin adapter responsible for:
 
 - plugin metadata
 - action dispatch (`fill`, legacy `inject`)
-- delegating runtime work to `IPkiExecutionService`
+- delegating runtime work to `ISecretFillExecutionService`
 
 ### Application Layer
 
-`PkiExecutionService` is responsible for:
+`SecretFillExecutionService` is responsible for:
 
 - validating slot arguments
 - resolving the requested secret
 - decrypting the stored payload
 - converting the request into a deterministic `InjectionPlan`
 
-### Shared PKI Contracts
+### Shared Secret Fill Contracts
 
-- `IPkiSecretStore`
+- `ISecretStore`
 - `ISecretProtector`
-- `IPkiSecretMetadataResolver`
+- `ISecretFillMetadataResolver`
 - `IInjectionExecutor`
 - `IFocusRestorer`
 
@@ -80,13 +80,13 @@ These contracts are shared between runtime and settings flows so storage, protec
 - `CredentialsManager`
 - `SendKeysInjectionExecutor`
 - `WindowsFocusRestorer`
-- input helpers under `Plugins/Core/Pki/Services/Input/`
+- input helpers under `Plugins/Core/SecretFill/Services/Input/`
 
 ---
 
 ## Failure Boundaries
 
-PKI execution surfaces stage-specific outcomes for:
+Secret Fill execution surfaces stage-specific outcomes for:
 
 - validation
 - secret lookup
@@ -125,12 +125,12 @@ In `Profiles.json`:
 
 ## Focus Management
 
-PKI fill relies on captured invocation context instead of querying live state inside the plugin.
+Secret Fill relies on captured invocation context instead of querying live state inside the plugin.
 
 Focus flow:
 
 1. the launcher captures the target window handle before Pulsar takes focus
-2. PKI execution hides the launcher
+2. Secret Fill execution hides the launcher
 3. focus restoration returns to `PulsarContext.TargetWindowHandle`
 4. a short delay allows the target window to stabilize
 5. SendKeys-based injection begins
@@ -141,7 +141,7 @@ This preserves the plugin-system invariant that runtime plugins use `PulsarConte
 
 ## Related Documents
 
-- `Docs/plugins/PkiPlugin.md`
+- `Docs/plugins/SecretFillPlugin.md`
 - `Docs/archive/2026-03-26-PKI_REFACTORING_AND_BUGS.md`
 - `Docs/architecture/PLUGIN_SYSTEM.md`
 - `Docs/lessons/RDP_MODIFIER_KEY_STUCK.md`
@@ -152,4 +152,4 @@ This preserves the plugin-system invariant that runtime plugins use `PulsarConte
 
 - `v1.0.0` (2026-03-03): initial extraction from agent guidance
 - `v1.1.0` (2026-03-09): added RDP modifier-state guidance
-- `v1.2.0` (2026-03-27): documented layered PKI runtime and SendKeys-first PKI policy
+- `v1.2.0` (2026-03-27): documented layered Secret Fill runtime and SendKeys-first Secret Fill policy

@@ -209,7 +209,7 @@ namespace Pulsar.Core.Plugin
 
         /// <summary>
         /// 按 action 名分发到 handler map。action 名统一小写后查找，可携带别名映射
-        /// （例如 PKI 的 "inject" → "fill"）。未命中时返回本地化的 UnknownAction 错误。
+        /// （例如 SecretFill 的 "inject" → "fill"）。未命中时返回本地化的 UnknownAction 错误。
         /// handler map 是运行期"存在哪些 Action"的唯一事实源——插件不再手写 switch。
         /// </summary>
         /// <param name="action">动作名（不区分大小写）</param>

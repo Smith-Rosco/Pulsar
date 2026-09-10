@@ -24,7 +24,7 @@ The system SHALL present a normalized user-facing feedback message for common ac
 ### Requirement: User-facing feedback must protect sensitive data
 The system SHALL not display plaintext secrets or other sensitive payload values in action feedback.
 
-#### Scenario: PKI action fails
+#### Scenario: Secret Fill action fails
 - **WHEN** a credential-related action succeeds or fails
 - **THEN** the system presents user-facing feedback without exposing account values, passwords, secret payloads, or decrypted content
 

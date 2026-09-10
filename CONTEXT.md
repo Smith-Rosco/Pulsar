@@ -123,15 +123,19 @@ The single source of truth for business configuration: Profiles, Slots, settings
 _Avoid_: Config file
 
 **Secret**:
-A credential entry managed by the PKI module; display metadata (ID, Label, Icon) lives in Profiles.json while the encrypted payload lives in secrets.json.
+A credential entry managed by the Secret Fill module; display metadata (ID, Label, Icon) lives in Profiles.json while the encrypted payload lives in secrets.json.
 _Avoid_: Password, credential item
 
 **SecretPayload**:
 The encrypted sensitive half of a Secret (account + data), stored separately from display metadata and linked by ID.
 
-**PKI**:
-The Core module that stores Secrets and injects credentials into target windows.
-_Avoid_: Password manager
+**Secret Fill**:
+The Core module that stores Secrets and injects credentials into target windows. Code lives at `Plugins/Core/SecretFill/`; the plugin's user-facing display name is AutoFill.
+_Avoid_: **PKI** — that abbreviation means Public Key Infrastructure (certificates, CAs, X.509), which this module does not implement; it is DPAPI-encrypted credential storage plus keystroke injection. Also avoid: Password manager.
+
+**Plugin Id** (`com.pulsar.pki`):
+The frozen plugin identifier for the Secret Fill module. It is persisted in user `Profiles.json` slot `plugin` fields and must not change without a config migration.
+_Avoid_: assuming the id reflects the module's current name — it is a historical identifier kept for config stability.
 
 **Config Edit Session**:
 A transactional workspace over a snapshot of Profiles.json; mutations target its draft, and CommitAsync persists with optimistic concurrency, rebasing to preserve concurrent writers' untouched regions. All config writes go through it; one-shot callers use typed mutation helpers (UpdateSettings, UpdatePluginProfile, UpdateProcessProfile, ReplaceAll) rather than editing the draft directly.

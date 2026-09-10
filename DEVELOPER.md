@@ -134,7 +134,7 @@ dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-containe
 
 | 插件 | ID | 描述 | 分层 |
 |------|----|------|------|
-| 秘密填充 (PKI) | `com.pulsar.pki` | DPAPI 加密凭据库，UI 自动化注入用户名/密码，支持延迟与自动提交 | 核心 |
+| 秘密填充 (Secret Fill) | `com.pulsar.pki` | DPAPI 加密凭据库，UI 自动化注入用户名/密码，支持延迟与自动提交 | 核心 |
 | 应用切换器 | `com.pulsar.winswitcher` | 智能窗口切换（模糊搜索），未运行自动启动，支持发现黑名单 | 核心 |
 | Pulsar 设置 | `com.pulsar.system` | 打开设置、快速添加上下文应用、系统命令 | 核心 |
 | 命令启动器 | `com.pulsar.command` | 启动应用/文件/文件夹/URL，向前台窗口发送按键序列 | 扩展 |

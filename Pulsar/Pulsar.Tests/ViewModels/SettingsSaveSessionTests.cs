@@ -13,8 +13,8 @@ using Pulsar.Core.Plugin;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.Plugins.Core.SecretFill.Contracts;
+using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Plugins.Core.WinSwitcher;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
@@ -257,11 +257,11 @@ namespace Pulsar.Tests.ViewModels
             dialogService.Setup(service => service.ShowColorPickerAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync((string?)null);
 
-            var secretStore = new Mock<IPkiSecretStore>();
+            var secretStore = new Mock<ISecretStore>();
             secretStore.Setup(store => store.LoadAsync()).ReturnsAsync(new Dictionary<Guid, SecretPayload>());
             secretStore.Setup(store => store.SaveAsync(It.IsAny<Dictionary<Guid, SecretPayload>>())).Returns(Task.CompletedTask);
 
-            var secretMetadataResolver = new Mock<IPkiSecretMetadataResolver>();
+            var secretMetadataResolver = new Mock<ISecretFillMetadataResolver>();
             secretMetadataResolver
                 .Setup(resolver => resolver.Resolve(It.IsAny<string?>(), It.IsAny<IReadOnlyDictionary<Guid, SecretPayload>?>(), It.IsAny<IReadOnlyDictionary<Guid, SecretPayload>?>(), It.IsAny<IReadOnlyDictionary<Guid, string>?>()))
                 .Returns((SecretDisplayMetadata?)null);
