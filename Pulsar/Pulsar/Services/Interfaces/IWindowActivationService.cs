@@ -12,19 +12,9 @@ namespace Pulsar.Services.Interfaces
     public interface IWindowActivationService
     {
         /// <summary>
-        /// 尝试将焦点切换到指定进程
-        /// </summary>
-        bool FocusWindow(string processName);
-
-        /// <summary>
         /// 异步切换到指定进程
         /// </summary>
         Task<bool> SwitchToProcessAsync(string processName);
-
-        /// <summary>
-        /// 启动应用程序
-        /// </summary>
-        Task<bool> LaunchApplicationAsync(string command, string? arguments);
 
         /// <summary>
         /// 使用共享选择规则从候选窗口中选择目标窗口。

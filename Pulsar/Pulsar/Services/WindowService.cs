@@ -282,65 +282,6 @@ namespace Pulsar.Services
         // 2. [Existing] 原有功能实现
         // ==========================================
 
-        public WindowInfo GetForegroundWindow()
-        {
-            try
-            {
-                IntPtr hWnd = PulsarNative.GetForegroundWindow();
-                if (hWnd == IntPtr.Zero) return new WindowInfo("Global", "", "Desktop");
-
-                PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
-                using (var process = Process.GetProcessById((int)processId))
-                {
-                    string path = "";
-                    try { path = process.MainModule?.FileName ?? ""; } catch { }
-                    return new WindowInfo(process.ProcessName.ToLower(), path, process.MainWindowTitle);
-                }
-            }
-            catch
-            {
-                return new WindowInfo("Global", "", "Unknown");
-            }
-        }
-
-        public bool FocusWindow(string processName)
-        {
-            string targetName = processName.ToLower().Replace(".exe", "");
-            var processes = Process.GetProcessesByName(targetName);
-
-            foreach (var proc in processes)
-            {
-                if (proc.MainWindowHandle != IntPtr.Zero)
-                {
-                    _ = _focusManager.ActivateWindowAsync(proc.MainWindowHandle);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public Task<bool> LaunchApplicationAsync(string command, string? arguments)
-        {
-            return Task.Run(() =>
-            {
-                try
-                {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = command,
-                        Arguments = arguments,
-                        UseShellExecute = true
-                    });
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "[WindowService] Launch error: {Command}", command);
-                    return false;
-                }
-            });
-        }
-
         public Task<bool> SwitchToProcessAsync(string processName)
         {
             return Task.Run(async () =>
@@ -430,23 +371,6 @@ namespace Pulsar.Services
 
         public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
             => _inventoryCoordinator.GetActiveWindowsAsync();
-
-        public bool TryGetCachedActiveWindows(out List<ProcessWindowInfo> windows)
-        {
-            if (_inventoryCoordinator.TryGetCached(out var cached) && cached != null)
-            {
-                windows = cached;
-                return true;
-            }
-
-            windows = new List<ProcessWindowInfo>();
-            return false;
-        }
-
-        public void PreWarmWindowInventory()
-        {
-            _inventoryCoordinator.PrewarmOnMenuDismiss();
-        }
 
         public Task<HashSet<string>> GetRunningProcessNamesAsync()
         {
@@ -541,16 +465,6 @@ namespace Pulsar.Services
         public void SetFocusRestoreMode(FocusRestoreMode mode, IntPtr targetWindow = default)
         {
             _focusManager.SetRestoreMode(mode, targetWindow);
-        }
-        
-        public FocusRestoreMode GetFocusRestoreMode()
-        {
-            return _focusManager.RestoreMode;
-        }
-        
-        public void RestoreFocus()
-        {
-            _ = _focusManager.ReleaseAsync();
         }
 
         private string GetWindowTitle(IntPtr hWnd)

@@ -35,15 +35,5 @@ namespace Pulsar.Services.Interfaces
         /// 设置焦点归还模式
         /// </summary>
         void SetFocusRestoreMode(FocusRestoreMode mode, System.IntPtr targetWindow = default);
-
-        /// <summary>
-        /// 获取当前焦点归还模式
-        /// </summary>
-        FocusRestoreMode GetFocusRestoreMode();
-
-        /// <summary>
-        /// 执行焦点归还（根据当前模式）
-        /// </summary>
-        void RestoreFocus();
     }
 }

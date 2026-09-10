@@ -14,29 +14,9 @@ namespace Pulsar.Services.Interfaces
     public interface IWindowDiscoveryService
     {
         /// <summary>
-        /// 获取当前前台窗口的信息
-        /// </summary>
-        WindowInfo GetForegroundWindow();
-
-        /// <summary>
         /// 获取当前所有可见窗口的列表（用于进程选择器）
         /// </summary>
         Task<List<ProcessWindowInfo>> GetActiveWindowsAsync();
-
-        /// <summary>
-        /// Returns the cached desktop inventory snapshot without enumerating, when a
-        /// fresh snapshot is still available. Used by the Switch-mode radial menu to
-        /// decide whether content can be loaded synchronously before the shell is
-        /// surfaced (warm cache) instead of falling back to a background load.
-        /// </summary>
-        bool TryGetCachedActiveWindows(out List<ProcessWindowInfo> windows);
-
-        /// <summary>
-        /// Kicks off a single-flight background desktop enumeration so the next
-        /// Switch-mode open finds a warm cache. Called when the radial menu hides so
-        /// a peek→dismiss→reopen cycle does not re-enumerate the desktop.
-        /// </summary>
-        void PreWarmWindowInventory();
 
         /// <summary>
         /// 获取当前正在运行的进程名集合（轻量级，无完整窗口候选构建）。
