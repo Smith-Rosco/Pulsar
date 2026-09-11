@@ -175,7 +175,11 @@ namespace Pulsar.Tests.ViewModels
                 d => d.ShowCustomAsync(
                     DialogIds.PluginAnalyticsDetails,
                     It.Is<PluginAnalyticsDetailViewModel>(v => v.PluginId == "plugin.a"),
-                    It.IsAny<object[]>()),
+                    // 标题实参必须真的传出去：resx 值带 {0} 且目录行 TitleIsFormat = true。
+                    // 此前 resx 值没有占位符，实参被 string.Format 静默丢弃 —— 标题里
+                    // 从来没有插件名。钉住实参，防止再退化成"传了但没人用"。
+                    It.Is<object[]>(args =>
+                        args.Length == 1 && !string.IsNullOrWhiteSpace(Convert.ToString(args[0])))),
                 Times.Once);
         }
 

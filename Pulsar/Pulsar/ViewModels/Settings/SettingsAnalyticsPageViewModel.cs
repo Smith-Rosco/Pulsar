@@ -220,11 +220,10 @@ namespace Pulsar.ViewModels.Settings
             var vm = new Pulsar.ViewModels.Dialogs.PluginAnalyticsDetailViewModel(
                 item, _loc, _pluginRegistry, _recommendationEngine);
 
-            // No title argument: the catalog row's title ("Plugin Details" / "插件详情")
-            // has no {0} placeholder, so passing the display name here was silently
-            // discarded by string.Format. Behaviour is unchanged; the resx value is the
-            // thing to fix if the name should appear (see ADR-033 follow-up).
-            await _dialogService.ShowCustomAsync(DialogIds.PluginAnalyticsDetails, vm);
+            // The catalog row is TitleIsFormat = true and the resx value carries a {0}
+            // placeholder, so the display name really lands in the title
+            // ("Plugin Details: AutoFill" / "插件详情：AutoFill").
+            await _dialogService.ShowCustomAsync(DialogIds.PluginAnalyticsDetails, vm, item.DisplayName);
         }
 
         [RelayCommand]

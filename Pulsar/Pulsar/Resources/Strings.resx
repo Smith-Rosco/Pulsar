@@ -3044,7 +3044,7 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Expand or collapse</value>
   </data>
   <data name="Dialog.PluginAnalyticsDetail.Title" xml:space="preserve">
-    <value>Plugin Details</value>
+    <value>Plugin Details: {0}</value>
   </data>
   <data name="Dialog.PluginAnalyticsDetail.Version" xml:space="preserve">
     <value>v</value>

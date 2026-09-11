@@ -68,7 +68,7 @@ namespace Pulsar.Services
         /// <summary>"Plugin Logs: {0}" — the plugin log viewer (Settings plugin list and analytics drill-down).</summary>
         public static readonly DialogId PluginLogs = new("PluginLogs");
 
-        /// <summary>"Plugin Details" — the analytics drill-down for one plugin.</summary>
+        /// <summary>"Plugin Details: {0}" — the analytics drill-down for one plugin.</summary>
         public static readonly DialogId PluginAnalyticsDetails = new("PluginAnalyticsDetails");
 
         /// <summary>"Example Library" — the built-in bookmarklet example browser.</summary>
@@ -178,7 +178,10 @@ namespace Pulsar.Services
             {
                 TitleIsFormat = true
             },
-            new(DialogIds.PluginAnalyticsDetails, "Dialog.PluginAnalyticsDetail.Title", typeof(PluginAnalyticsDetailViewModel), DialogSizeConstraints.Large, DialogButtons.Ok),
+            new(DialogIds.PluginAnalyticsDetails, "Dialog.PluginAnalyticsDetail.Title", typeof(PluginAnalyticsDetailViewModel), DialogSizeConstraints.Large, DialogButtons.Ok)
+            {
+                TitleIsFormat = true
+            },
             new(DialogIds.ExampleLibrary, "ExampleLibrary.Title", typeof(ExampleLibraryViewModel),
                 new DialogSizeConstraints
                 {

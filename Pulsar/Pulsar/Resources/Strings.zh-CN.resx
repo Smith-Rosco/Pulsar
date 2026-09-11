@@ -4642,7 +4642,7 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     <value>展开/收起</value>
   </data>
   <data name="Dialog.PluginAnalyticsDetail.Title" xml:space="preserve">
-    <value>插件详情</value>
+    <value>插件详情：{0}</value>
   </data>
   <data name="Dialog.PluginAnalyticsDetail.Version" xml:space="preserve">
     <value>版本</value>
