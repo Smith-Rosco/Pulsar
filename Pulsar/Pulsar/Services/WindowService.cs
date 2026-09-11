@@ -32,6 +32,8 @@ namespace Pulsar.Services
         private readonly IWindowInventoryCoordinator _inventoryCoordinator;
         private readonly IWindowCaptureService _captureService;
         private readonly Func<IntPtr, bool> _isWindow;
+        // [QuickSwitch fallback] MRU 解析失败时的 Z 序枚举缝：生产走 EnumWindows，测试注入假序列。
+        private readonly Func<IReadOnlyList<IntPtr>> _zOrderEnumerator;
         // [W2] 切换诊断开关由 Discovery Exclusion Policy 持有（ExcludeProcesses/ExcludeRules/
         // EnableSwitchDiagnostics 三个键的单一所有者）；WindowService 只读。
         private readonly IDiscoveryExclusionPolicy? _exclusionPolicy;
@@ -72,7 +74,8 @@ namespace Pulsar.Services
             ITrayService? trayService = null,
             ILocalizationService? loc = null,
             Func<IntPtr, bool>? isWindow = null,
-            IDiscoveryExclusionPolicy? exclusionPolicy = null)
+            IDiscoveryExclusionPolicy? exclusionPolicy = null,
+            Func<IReadOnlyList<IntPtr>>? zOrderEnumerator = null)
         {
             _logger = logger;
             _focusManager = focusManager;
@@ -82,6 +85,7 @@ namespace Pulsar.Services
             _loc = loc;
             _isWindow = isWindow ?? PulsarNative.IsWindow;
             _exclusionPolicy = exclusionPolicy;
+            _zOrderEnumerator = zOrderEnumerator ?? PulsarNative.GetTopLevelWindowsInZOrder;
             using (var currentProcess = Process.GetCurrentProcess())
             {
                 _currentProcessId = currentProcess.Id;
@@ -423,6 +427,41 @@ namespace Pulsar.Services
 
                 if (resolution.TargetWindow == IntPtr.Zero)
                 {
+                    // [QuickSwitch fallback] MRU 历史 + 菜单快照都无候选时（典型场景：Pulsar
+                    // 刚启动、历史还没积累，或候选全部被 eligibility 过滤），退化到 Windows
+                    // 原生 Z 序找"当前前台之下的第一个 Alt-Tab 窗口"。只在第 0 次尝试兜底
+                    // 一次；候选激活失败则走既有的 excludeTarget 循环。
+                    if (attempt == 0)
+                    {
+                        var fallbackTarget = FindZOrderFallbackTarget(realCurrentWindow, excludeTarget);
+                        if (fallbackTarget != IntPtr.Zero)
+                        {
+                            _logger.LogInformation(
+                                "[QuickSwitch] 🔄 MRU resolve failed, z-order fallback target: '{Title}' (Handle: 0x{Hwnd:X})",
+                                GetWindowTitle(fallbackTarget), fallbackTarget.ToInt64());
+
+                            var fallbackActivation = await ActivateWindowDetailedAsync(new ProcessWindowInfo
+                            {
+                                Handle = fallbackTarget,
+                                Title = GetWindowTitle(fallbackTarget),
+                                ProcessName = string.Empty
+                            });
+
+                            if (fallbackActivation.Success)
+                            {
+                                _logger.LogInformation("[QuickSwitch] ✅ Switched to '{Title}' (z-order fallback)",
+                                    GetWindowTitle(fallbackTarget));
+                                return true;
+                            }
+
+                            _logger.LogWarning(
+                                "[QuickSwitch] ⚠️ Z-order fallback activation failed for '{Title}' (Handle: 0x{Hwnd:X}), trying next candidate...",
+                                GetWindowTitle(fallbackTarget), fallbackTarget.ToInt64());
+                            excludeTarget = fallbackTarget;
+                            continue;
+                        }
+                    }
+
                     _logger.LogWarning("[QuickSwitch] ❌ No valid previous window found");
                     return false;
                 }
@@ -451,6 +490,40 @@ namespace Pulsar.Services
 
             _logger.LogWarning("[QuickSwitch] ❌ All {Count} quick-switch candidates failed", MaxQuickSwitchAttempts);
             return false;
+        }
+
+        /// <summary>
+        /// [QuickSwitch fallback] MRU 解析失败时的最后兜底：按 Windows 原生 Z 序
+        /// （EnumWindows 自顶向下）找第一个通过 Alt-Tab 合法性校验、且非当前前台
+        /// /非已排除候选的顶层窗口。合法性判定与历史路径同一 evaluator，杜绝双标。
+        /// </summary>
+        private IntPtr FindZOrderFallbackTarget(IntPtr currentWindow, IntPtr excludeTarget)
+        {
+            try
+            {
+                foreach (var hwnd in _zOrderEnumerator())
+                {
+                    if (hwnd == IntPtr.Zero ||
+                        hwnd == currentWindow ||
+                        hwnd == excludeTarget)
+                    {
+                        continue;
+                    }
+
+                    if (!_isWindow(hwnd) || !IsAltTabWindow(hwnd))
+                    {
+                        continue;
+                    }
+
+                    return hwnd;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[QuickSwitch] Z-order fallback enumeration failed");
+            }
+
+            return IntPtr.Zero;
         }
         
         // ==========================================

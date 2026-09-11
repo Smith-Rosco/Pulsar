@@ -176,6 +176,13 @@ namespace Pulsar.Views
                 this.Visibility = Visibility.Visible;
             }
 
+            // Capture the user's foreground window BEFORE this window activates —
+            // ActivateMenu below steals focus, and FocusManager.Capture skips when the
+            // foreground is already Pulsar's own. Without this capture, _capturedSnapshot
+            // stays null forever and the dismiss-time RestorePrevious release can never
+            // restore focus (it logs "captured window invalid or null (prev=0x0)").
+            _focusManager.Capture();
+
             // Bring to foreground and Activate via FocusManager
             _focusManager.ActivateMenu(this);
             

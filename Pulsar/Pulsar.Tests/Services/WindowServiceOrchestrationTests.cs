@@ -264,6 +264,61 @@ namespace Pulsar.Tests.Services
             }
         }
 
+        [Fact]
+        public async Task SwitchToPreviousWindow_WhenMruEmpty_ShouldFallBackToZOrderAndActivate()
+        {
+            using var win = new TestWindow("ZOrderFallback");
+            IReadOnlyList<IntPtr>? enumerated = null;
+            var (service, evaluator, _, focusManager, _, _, _) = CreateService(
+                isWindow: _ => true,
+                zOrderEnumerator: () =>
+                {
+                    // 返回两个候选：第一个被 eligibility 拒绝，第二个通过 —— 验证 fallback
+                    // 走的是同一套 Alt-Tab 校验而不是拿 Z 序头一个就用。
+                    enumerated = new List<IntPtr> { new IntPtr(0x7F01), win.Handle };
+                    return enumerated;
+                });
+            try
+            {
+                SetupEligible(evaluator, included: false, verdict: WindowEligibilityVerdict.ExcludedToolWindow);
+                // 第二个候选（真实窗口）恢复为 eligible。
+                evaluator
+                    .Setup(e => e.EvaluateWithSnapshot(win.Handle, It.IsAny<EligibilityScope>()))
+                    .Returns((new EligibilityResult(true, WindowEligibilityVerdict.Eligible), new WindowEligibilitySnapshot()));
+
+                focusManager
+                    .Setup(f => f.ActivateWindowAsync(win.Handle, It.IsAny<FocusActivationOptions?>()))
+                    .ReturnsAsync(new FocusActivationResult { Success = true, VerificationPassed = true });
+
+                var result = await service.SwitchToPreviousWindow();
+
+                result.Should().BeTrue();
+                focusManager.Verify(f => f.ActivateWindowAsync(win.Handle, It.IsAny<FocusActivationOptions?>()), Times.Once);
+            }
+            finally
+            {
+                service.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task SwitchToPreviousWindow_WhenMruEmptyAndNoZOrderCandidate_ShouldReturnFalse()
+        {
+            var (service, _, _, _, _, _, _) = CreateService(
+                isWindow: _ => true,
+                zOrderEnumerator: () => new List<IntPtr>());
+            try
+            {
+                var result = await service.SwitchToPreviousWindow();
+
+                result.Should().BeFalse();
+            }
+            finally
+            {
+                service.Dispose();
+            }
+        }
+
         private static void InvokeOnWindowActivated(WindowService service, IntPtr hwnd)
         {
             var method = typeof(WindowService).GetMethod(
@@ -279,7 +334,8 @@ namespace Pulsar.Tests.Services
             WindowInventoryCache Cache,
             QuickSwitchEngine QuickSwitch,
             WindowTrackingService Tracking) CreateService(
-            Func<IntPtr, bool>? isWindow = null)
+            Func<IntPtr, bool>? isWindow = null,
+            Func<IReadOnlyList<IntPtr>>? zOrderEnumerator = null)
         {
             var evaluator = new Mock<IWindowEligibilityEvaluator>();
             var inventory = new Mock<IWindowInventoryService>();
@@ -306,7 +362,8 @@ namespace Pulsar.Tests.Services
                 quickSwitch,
                 tracking,
                 Mock.Of<IWindowCaptureService>(),
-                isWindow: isWindow);
+                isWindow: isWindow,
+                zOrderEnumerator: zOrderEnumerator);
 
             return (service, evaluator, inventory, focusManager, cache, quickSwitch, tracking);
         }

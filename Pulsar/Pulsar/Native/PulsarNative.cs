@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -137,6 +138,21 @@ namespace Pulsar.Native
 
         [DllImport("user32.dll")]
         public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        /// <summary>
+        /// 枚举全部顶层窗口句柄，按 EnumWindows 返回顺序（即自顶向下的 Z 序）。
+        /// 不做任何过滤 —— 调用方负责用 eligibility 规则筛选。
+        /// </summary>
+        public static IReadOnlyList<IntPtr> GetTopLevelWindowsInZOrder()
+        {
+            var handles = new List<IntPtr>();
+            EnumWindows((hWnd, _) =>
+            {
+                handles.Add(hWnd);
+                return true;
+            }, IntPtr.Zero);
+            return handles;
+        }
 
         [DllImport("user32.dll")]
         public static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
