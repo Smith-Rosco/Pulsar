@@ -75,9 +75,6 @@ namespace Pulsar.ViewModels
 
         public string CurrentView => _settingsShell.CurrentLegacyViewName;
 
-        public bool IsSettingsView => string.Equals(CurrentView, "Settings", StringComparison.OrdinalIgnoreCase);
-        public bool IsSlotsView => string.Equals(CurrentView, "Slots", StringComparison.OrdinalIgnoreCase);
-
         [RelayCommand]
         public async Task SwitchView(string viewName)
         {
@@ -339,14 +336,8 @@ namespace Pulsar.ViewModels
             if (e.PropertyName == nameof(SettingsShellViewModel.CurrentPageId))
             {
                 OnPropertyChanged(nameof(CurrentView));
-                OnPropertyChanged(nameof(IsSettingsView));
-                OnPropertyChanged(nameof(IsSlotsView));
             }
         }
-
-        // [New] Pause/Resume Hotkeys
-        public void PauseHotkeys() => _hotkeyService.Pause();
-        public void ResumeHotkeys() => _hotkeyService.Resume();
 
         public async Task<ProfilesConfig> GetConfigAsync()
         {
@@ -405,14 +396,6 @@ namespace Pulsar.ViewModels
 
             var draftTitle = string.Format(_loc["Settings.SlotEditor.DraftTabTitleFormat"], contextName);
             await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, draftEntityId, draftTitle);
-        }
-
-        [RelayCommand]
-        public void AddSlotOfType(string pluginId)
-        {
-            var draft = _slotEditor.CreateSlotDraft(pluginId);
-            _slotEditor.CommitCreatedSlot(draft);
-            SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], draft.Label), ControlAppearance.Success);
         }
 
         [RelayCommand(CanExecute = nameof(CanAddSecrets))]
@@ -490,36 +473,6 @@ namespace Pulsar.ViewModels
 
                 SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.ProfileCreatedFormat"], ProcessNameFormatter.ToDisplayName(processName)), ControlAppearance.Success);
             });
-        }
-
-        private string? TryDiscoverIconForProcess(string processName)
-        {
-            try
-            {
-                // 1. Try finding running process
-                var processes = System.Diagnostics.Process.GetProcessesByName(processName);
-                foreach (var proc in processes)
-                {
-                    try
-                    {
-                        string? path = proc.MainModule?.FileName;
-                        if (!string.IsNullOrEmpty(path) && File.Exists(path))
-                        {
-                            var iconSource = IconHelper.GetIconFromPath(path);
-                            if (iconSource != null)
-                            {
-                                return IconHelper.SaveIconToCache(iconSource, processName);
-                            }
-                        }
-                    }
-                    catch { /* Ignore access denied for specific process instance */ }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "[IconDiscovery] Failed for {ProcessName}", processName);
-            }
-            return null;
         }
 
         [RelayCommand]
@@ -671,21 +624,6 @@ namespace Pulsar.ViewModels
                 .ToList();
 
             return SlotTypeCard.BuildAllCards(_loc, pluginDisplayModels);
-        }
-
-        [RelayCommand]
-        public void AddSlot()
-        {
-            // Keep legacy AddSlot for backwards compatibility
-            // Defaults to WinSwitcher or Command based on context
-            if (CurrentContext?.Key == "Launcher")
-            {
-                AddSlotOfType("com.pulsar.winswitcher");
-            }
-            else
-            {
-                AddSlotOfType("com.pulsar.command");
-            }
         }
 
         [RelayCommand]
@@ -1165,11 +1103,6 @@ namespace Pulsar.ViewModels
                 item["scriptPath"] = dialog.FileName; 
                 _slotEditor.RefreshSlotValidationSummary(item);
             }
-        }
-
-        public void SetSlotAction(PluginSlot slot, string? action)
-        {
-            _slotEditor.SetSlotAction(slot, action);
         }
 
         public async Task PickSlotParameterValue(SlotParameterEditorField field)
