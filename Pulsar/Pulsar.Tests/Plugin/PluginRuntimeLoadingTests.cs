@@ -217,8 +217,7 @@ namespace Pulsar.Tests.Plugin
                     RequiresForegroundWindow = false,
                     Dependencies = new List<string>(),
                     CanDisable = true,
-                    Tier = PluginTier.Extension,
-                    MinPulsarVersion = "1.0.0"
+                    Tier = PluginTier.Extension
                 },
                 Actions = new Dictionary<string, Core.Plugin.Metadata.SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
             };

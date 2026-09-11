@@ -215,8 +215,7 @@ namespace Pulsar.Tests.Plugin
                     {
                         SupportedActions = new List<string> { "hang", "fast" },
                         Dependencies = new List<string>(),
-                        Tier = tier,
-                        MinPulsarVersion = "1.0.0"
+                        Tier = tier
                     },
                     Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
                 },

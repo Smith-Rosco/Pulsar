@@ -86,8 +86,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                     RequiresForegroundWindow = true,
                     Dependencies = new List<string> { "com.pulsar.winswitcher" },
                     CanDisable = CanDisable,
-                    Tier = Tier,
-                    MinPulsarVersion = "1.0.0"
+                    Tier = Tier
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
                 {

@@ -166,8 +166,7 @@ namespace Pulsar.Plugins.Core.SecretFill
                     RequiresForegroundWindow = true,
                     Dependencies = new List<string>(),
                     CanDisable = false,
-                    Tier = PluginTier.Core,
-                    MinPulsarVersion = "1.0.0"
+                    Tier = PluginTier.Core
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
                 {

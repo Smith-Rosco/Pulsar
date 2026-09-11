@@ -49,8 +49,7 @@ namespace Pulsar.Plugins.Extensions.Command
                     RequiresForegroundWindow = false,
                     Dependencies = new List<string>(),
                     CanDisable = canDisable,
-                    Tier = tier,
-                    MinPulsarVersion = null!
+                    Tier = tier
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
                 {

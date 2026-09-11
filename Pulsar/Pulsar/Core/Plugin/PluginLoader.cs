@@ -422,8 +422,7 @@ namespace Pulsar.Core.Plugin
                     RequiresForegroundWindow = false,
                     Dependencies = manifest.Dependencies.Keys.ToList(),
                     CanDisable = true,
-                    Tier = PluginTier.Extension,
-                    MinPulsarVersion = manifest.MinPulsarVersion
+                    Tier = PluginTier.Extension
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
             };
@@ -577,8 +576,7 @@ namespace Pulsar.Core.Plugin
                     RequiresForegroundWindow = false,
                     Dependencies = plugin.Dependencies.ToList(),
                     CanDisable = plugin.CanDisable,
-                    Tier = tier,
-                    MinPulsarVersion = plugin.MinPulsarVersion
+                    Tier = tier
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
             };

@@ -1,4 +1,3 @@
-using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Localization;
@@ -16,7 +15,6 @@ namespace Pulsar.Models.Settings
             string titleKey,
             string legacyViewName,
             SymbolRegular icon,
-            Type pageType,
             string? tutorialMarkerId = null,
             string? groupId = null,
             bool isTransient = false,
@@ -27,7 +25,6 @@ namespace Pulsar.Models.Settings
             _titleOverride = titleOverride;
             LegacyViewName = legacyViewName;
             Icon = icon;
-            PageType = pageType;
             TutorialMarkerId = tutorialMarkerId;
             GroupId = groupId;
             IsTransient = isTransient;
@@ -69,8 +66,6 @@ namespace Pulsar.Models.Settings
 
         public SymbolRegular Icon { get; }
 
-        public Type PageType { get; }
-
         public string? TutorialMarkerId { get; }
 
         /// <summary>
@@ -87,7 +82,7 @@ namespace Pulsar.Models.Settings
 
         /// <summary>
         /// 以本注册为模板克隆一条实体级临时页注册（unify-slot-editor-transient-pages D1）：
-        /// 新 id = 组合 id，标题可被实体标题覆盖，其余元数据（图标/页面类型/分组）原样保留。
+        /// 新 id = 组合 id，标题可被实体标题覆盖，其余元数据（图标/分组）原样保留。
         /// </summary>
         public SettingsPageRegistration CloneAsTransientEntity(string id, string? titleOverride = null)
         {
@@ -96,7 +91,6 @@ namespace Pulsar.Models.Settings
                 _titleKey,
                 LegacyViewName,
                 Icon,
-                PageType,
                 TutorialMarkerId,
                 GroupId,
                 isTransient: true,

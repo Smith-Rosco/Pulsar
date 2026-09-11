@@ -35,11 +35,6 @@ namespace Pulsar.Core.Plugin.Metadata
         /// </summary>
         public PluginTier Tier { get; init; } = PluginTier.Extension;
 
-        /// <summary>
-        /// 最低 Pulsar 版本要求
-        /// </summary>
-        public string MinPulsarVersion { get; init; } = "1.0.0";
-
         // ── UI 卡片能力声明（架构审查候选 F，2026-09-04）──────────────────────
         // 通用设置页的插件卡片曾按「硬编码插件 ID」决定显示哪些入口与路由哪个
         // 配置对话框（com.pulsar.bookmarklet → 脚本编辑器/示例库；com.pulsar.winswitcher

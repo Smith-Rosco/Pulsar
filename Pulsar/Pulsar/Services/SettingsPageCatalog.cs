@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Pulsar.Core.Localization;
 using Pulsar.Models.Settings;
-using Pulsar.Views.Pages;
 using Wpf.Ui.Controls;
 
 namespace Pulsar.Services
@@ -59,12 +58,12 @@ namespace Pulsar.Services
             // 常规设置与统计/关于等系统支持页靠后（见 openspec home-screen-entry-reorder）。
             _pages =
             [
-                new SettingsPageRegistration(SettingsPageIds.Slots, "Settings.Slots.Title", "Slots", SymbolRegular.Grid24, typeof(SettingsSlotsPage), "SlotsNavigationItem", SettingsPageGroupIds.Workbench),
-                new SettingsPageRegistration(SettingsPageIds.Plugins, "Settings.Plugins.Title", "Plugins", SymbolRegular.PuzzlePiece24, typeof(SettingsPluginsPage), groupId: SettingsPageGroupIds.Workbench),
-                new SettingsPageRegistration(SettingsPageIds.General, "Settings.General.Title", "Settings", SymbolRegular.Settings24, typeof(SettingsGeneralPage), groupId: SettingsPageGroupIds.System),
-                new SettingsPageRegistration(SettingsPageIds.Appearance, "SettingsPage.Appearance.Title", "Appearance", SymbolRegular.Color24, typeof(SettingsAppearancePage), groupId: SettingsPageGroupIds.System),
-                new SettingsPageRegistration(SettingsPageIds.Analytics, "Settings.Analytics.Title", "Analytics", SymbolRegular.ArrowTrendingLines24, typeof(SettingsAnalyticsPage), groupId: SettingsPageGroupIds.System),
-                new SettingsPageRegistration(SettingsPageIds.About, "Settings.About.Title", "About", SymbolRegular.Info24, typeof(SettingsAboutPage), groupId: SettingsPageGroupIds.System)
+                new SettingsPageRegistration(SettingsPageIds.Slots, "Settings.Slots.Title", "Slots", SymbolRegular.Grid24, "SlotsNavigationItem", SettingsPageGroupIds.Workbench),
+                new SettingsPageRegistration(SettingsPageIds.Plugins, "Settings.Plugins.Title", "Plugins", SymbolRegular.PuzzlePiece24, groupId: SettingsPageGroupIds.Workbench),
+                new SettingsPageRegistration(SettingsPageIds.General, "Settings.General.Title", "Settings", SymbolRegular.Settings24, groupId: SettingsPageGroupIds.System),
+                new SettingsPageRegistration(SettingsPageIds.Appearance, "SettingsPage.Appearance.Title", "Appearance", SymbolRegular.Color24, groupId: SettingsPageGroupIds.System),
+                new SettingsPageRegistration(SettingsPageIds.Analytics, "Settings.Analytics.Title", "Analytics", SymbolRegular.ArrowTrendingLines24, groupId: SettingsPageGroupIds.System),
+                new SettingsPageRegistration(SettingsPageIds.About, "Settings.About.Title", "About", SymbolRegular.Info24, groupId: SettingsPageGroupIds.System)
             ];
         }
 

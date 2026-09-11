@@ -111,8 +111,7 @@ namespace Pulsar.Tests.Config
                 {
                     SupportedActions = new List<string> { "run" },
                     Dependencies = new List<string>(),
-                    Tier = Core.Plugin.PluginTier.Extension,
-                    MinPulsarVersion = "1.0.0"
+                    Tier = Core.Plugin.PluginTier.Extension
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>
                 {
@@ -162,8 +161,7 @@ namespace Pulsar.Tests.Config
                 {
                     SupportedActions = new List<string> { "fill" },
                     Dependencies = new List<string>(),
-                    Tier = Core.Plugin.PluginTier.Core,
-                    MinPulsarVersion = "1.0.0"
+                    Tier = Core.Plugin.PluginTier.Core
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>
                 {

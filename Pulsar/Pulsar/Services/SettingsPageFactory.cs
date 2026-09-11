@@ -54,12 +54,6 @@ namespace Pulsar.Services
             };
         }
 
-        /// <summary>运行时注册/覆盖页面构造器（临时页、插件贡献页用）。</summary>
-        public void RegisterCreator(string pageId, Func<SettingsViewModel, Page> creator)
-        {
-            _creators[pageId] = creator;
-        }
-
         public Page CreatePage(string pageId, SettingsViewModel settingsViewModel)
         {
             // 实体级临时页（unify-slot-editor-transient-pages D1/D2）：组合 id 的构造器

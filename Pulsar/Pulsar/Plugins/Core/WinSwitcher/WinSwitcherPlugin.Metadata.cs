@@ -78,7 +78,6 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     Dependencies = new List<string>(),
                     CanDisable = false,
                     Tier = PluginTier.Core,
-                    MinPulsarVersion = "1.0.0",
                     HasCustomConfigDialog = true,
                     SupportsWindowInspector = true
                 },

@@ -272,8 +272,7 @@ namespace Pulsar.Tests.Plugin
                     {
                         SupportedActions = new List<string> { "test" },
                         Dependencies = new List<string>(),
-                        Tier = plugin.CanDisable ? PluginTier.Extension : PluginTier.Core,
-                        MinPulsarVersion = "1.0.0"
+                        Tier = plugin.CanDisable ? PluginTier.Extension : PluginTier.Core
                     },
                     Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
                 },

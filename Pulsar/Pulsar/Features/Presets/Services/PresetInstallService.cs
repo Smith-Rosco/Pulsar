@@ -309,8 +309,7 @@ namespace Pulsar.Features.Presets.Services
                     {
                         SupportedActions = new List<string>(),
                         Dependencies = new List<string>(),
-                        Tier = PluginTier.Extension,
-                        MinPulsarVersion = "1.0.0"
+                        Tier = PluginTier.Extension
                     },
                     Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
                 }

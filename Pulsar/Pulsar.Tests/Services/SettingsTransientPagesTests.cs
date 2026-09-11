@@ -30,7 +30,7 @@ namespace Pulsar.Tests.Services
 
         private static SettingsPageRegistration CreateTransientRegistration(
             string id = SettingsPageIds.Gesture, string? groupId = SettingsPageGroupIds.System) =>
-            new(id, "SettingsPage.Gesture.Title", id, SymbolRegular.Dialpad24, typeof(object),
+            new(id, "SettingsPage.Gesture.Title", id, SymbolRegular.Dialpad24,
                 groupId: groupId, isTransient: true);
 
         private static SettingsShellViewModel CreateShell(
@@ -129,7 +129,7 @@ namespace Pulsar.Tests.Services
             var catalog = CreateCatalog();
 
             var act = () => catalog.RegisterTransient(new SettingsPageRegistration(
-                "fake", "k", "fake", SymbolRegular.Info24, typeof(object),
+                "fake", "k", "fake", SymbolRegular.Info24,
                 groupId: SettingsPageGroupIds.System, isTransient: false));
 
             act.Should().Throw<ArgumentException>();
@@ -398,7 +398,7 @@ namespace Pulsar.Tests.Services
 
         private static SettingsPageRegistration CreateSlotEditorTemplate() =>
             new(SettingsPageIds.SlotEditor, "Settings.SlotEditor.TabTitleFormat", "SlotEditor",
-                SymbolRegular.Edit24, typeof(object),
+                SymbolRegular.Edit24,
                 groupId: SettingsPageGroupIds.Workbench, isTransient: true);
 
         [Fact]

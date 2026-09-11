@@ -491,8 +491,7 @@ namespace Pulsar.Tests.ViewModels
                     RequiresForegroundWindow = false,
                     Dependencies = new List<string>(),
                     CanDisable = true,
-                    Tier = PluginTier.Extension,
-                    MinPulsarVersion = "1.0.0"
+                    Tier = PluginTier.Extension
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -549,8 +548,7 @@ namespace Pulsar.Tests.ViewModels
                     RequiresForegroundWindow = false,
                     Dependencies = new List<string>(),
                     CanDisable = false,
-                    Tier = PluginTier.Core,
-                    MinPulsarVersion = "1.0.0"
+                    Tier = PluginTier.Core
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
                 {

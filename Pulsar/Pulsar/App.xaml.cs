@@ -401,7 +401,6 @@ namespace Pulsar
                     "SettingsPage.Gesture.Title",
                     "Gesture",
                     Wpf.Ui.Controls.SymbolRegular.Dialpad24,
-                    typeof(Pulsar.Views.Pages.SettingsGesturePage),
                     groupId: SettingsPageGroupIds.System,
                     isTransient: true));
                 // Slot 编辑器模板（unify-slot-editor-transient-pages 2.2）：实体 tab 在
@@ -411,7 +410,6 @@ namespace Pulsar
                     "Settings.SlotEditor.TabTitleFormat",
                     "SlotEditor",
                     Wpf.Ui.Controls.SymbolRegular.Edit24,
-                    typeof(Pulsar.Views.Pages.SettingsSlotEditorPage),
                     groupId: SettingsPageGroupIds.Workbench,
                     isTransient: true));
                 return transientPages;

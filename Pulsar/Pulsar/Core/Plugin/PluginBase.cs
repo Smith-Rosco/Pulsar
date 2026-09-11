@@ -114,12 +114,6 @@ namespace Pulsar.Core.Plugin
         public virtual IEnumerable<string> Tags => new[] { "General" };
 
         /// <summary>
-        /// 最低 Pulsar 版本要求 (语义化版本)
-        /// 默认为 "1.0.0"
-        /// </summary>
-        public virtual string MinPulsarVersion => "1.0.0";
-
-        /// <summary>
         /// 文档链接 (可选)
         /// </summary>
         public virtual string? DocumentationUrl => null;
