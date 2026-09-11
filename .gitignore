@@ -403,12 +403,8 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# VS Code files for those working on multiple tools
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+# VS Code — 本地编辑器配置不入库（各人 / 各 harness 环境不同，一律忽略）
+.vscode/
 *.code-workspace
 
 # Local History for Visual Studio Code
