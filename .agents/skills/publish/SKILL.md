@@ -19,9 +19,9 @@ python scripts/publish.py <子命令> [参数]
 |---|---|---|
 | `info` | 版本决策辅助：仓库根、当前版本、最近 tag、自 tag 以来的提交、下一构建号 | - |
 | `set-version` | 写入 csproj `<Version>` 并同步 `<FileVersion>`/`<AssemblyVersion>`（x.y.z.0）；防降级与同版本重发 | `--version 1.9.0 [--allow-downgrade]` |
-| `build` | 构建 full + portable 两个发布产物并校验；本地默认不编译 Setup.exe | `--version 1.9.0 [--build 2] [--installer]` |
-| `pack` | 压缩 ZIP、校验（PK 魔数 + 体积阈值 + build-info）、终态收敛（成功后删除 `publish\v<ver>\` 产物目录） | `--version 1.9.0 [--build 2] [--installer] [--keep-publish-dirs]` |
-| `all` | `build` + `pack` 一口气完成 | 同 build/pack |
+| `build` | 本地默认只构建 **full** 自包含产物并校验（不编译 Setup.exe）；`--portable` 显式追加框架依赖产物 | `--version 1.9.0 [--build 2] [--portable] [--installer]` |
+| `pack` | 压缩 ZIP、校验（PK 魔数 + 体积阈值 + build-info）、终态收敛（成功后删除 `publish\v<ver>\` 产物目录）；默认只打 full | `--version 1.9.0 [--build 2] [--portable] [--installer] [--keep-publish-dirs]` |
+| `all` | `build` + `pack` 一口气完成；默认只产 full | 同 build/pack |
 | `changelog` | 把 `CHANGELOG.md` 的 `[Unreleased]` 段固化为 `## [X.Y.Z] - 日期` 并插入新空段；无真实条目时拒绝 | `--version 1.9.0` |
 | `tag` | commit 版本相关文件 + 创建 annotated tag（notes 写入 tag message，覆盖 `core.commentChar=§`） | `--version 1.9.0 --notes-file <路径>` |
 | `watch` | 等待 release.yml CI 完成（含 run 注册轮询 ~60s）、验证 Release 资产、导出 body 供核对 | `--version 1.9.0` |
@@ -64,20 +64,24 @@ python scripts/publish.py info
 
 ## 2. 构建与打包（local-artifact / local-version）
 
+**本地默认只产 full**（自包含单文件，开箱即用）；portable（框架依赖）是 CI Release 资产，本地构建耗时且大多数场景用不到。需要本地复现 portable 时（如 CI 不可用回退路径，见 §6）显式加 `--portable`。
+
 ```bash
-python scripts/publish.py all --version 1.9.0            # build + pack 常规
-python scripts/publish.py all --version 1.9.1 --build 2  # 本地构建号
+python scripts/publish.py all --version 1.9.0            # build + pack，仅 full（默认）
+python scripts/publish.py all --version 1.9.1 --build 2  # 本地构建号，仅 full
+python scripts/publish.py all --version 1.9.0 --portable # 同时构建/打包 portable
 ```
 
 脚本内置断言（任一失败即 fail-fast，输出结构化 `{name, passed, detail}`）：
 - `full`：`Pulsar.exe` **≥ 50 MB**（.NET 8 单文件自包含嵌入运行时，勿再校验 cor3）、`Pulsar.pdb`、`Assets\`。
-- `portable`：`Pulsar.exe` **< 20 MB**（framework-dependent，误含运行时会超阈值）。
-- 两个 ZIP 以 `PK` 开头；两个目录含 `build-info.txt`。
-- **本地终态（2026-09-07 收敛）**：发布完成后 `artifacts\` 根只有 `Pulsar-$version-{full,portable}.zip` 两个文件；`publish\v<ver>\` 自动删除（`--keep-publish-dirs` 保留供冒烟/调试）。
+- `portable`（仅 `--portable`）：`Pulsar.exe` **< 20 MB**（framework-dependent，误含运行时会超阈值）。
+- 每个 ZIP 以 `PK` 开头；每个产物目录含 `build-info.txt`。
+- 跳过 portable 时 L1 报告会列出 `portable 构建 · portable 打包` 为「本次未做」（模式惯例，非异常）。
+- **本地终态（2026-09-07 收敛）**：发布完成后 `artifacts\` 根默认只有 `Pulsar-$version-full.zip` 一个文件（`--portable` 时多一个 `-portable.zip`）；`publish\v<ver>\` 自动删除（`--keep-publish-dirs` 保留供冒烟/调试）。
 
 **installer 回退路径（ADR-026）**：Setup.exe / Standalone zip / SHA256SUMS 是 CI 职责，本地默认不产出。CI 不可用需手动上传时，build 与 pack **都加** `--installer`（ISCC 不可用时非致命跳过并警告）。
 
-portable 版构建后建议冒烟测试（启动 6 秒不崩溃即通过）。
+full 版构建后建议冒烟测试（解压 ZIP 后启动 6 秒不崩溃即通过；自包含版启动略慢于 portable）。
 
 ## 3. Release notes（release 模式）
 
@@ -124,7 +128,7 @@ python scripts/publish.py watch --version 1.9.0
 
 ## 6. 回退路径（仅当 CI 不可用或用户明确要求本地上传）
 
-本地构建打包（第 2 节，installer 需 `--installer`）后手动 `gh` 上传。因仓库路径包含 `#`，先把 ZIP/notes 复制到不含 `#` 的临时目录再调用 `gh`，详见 `Docs/lessons/GH_CLI_HASH_PATH_BUG.md`。
+本地构建打包（第 2 节）后手动 `gh` 上传。**回退上传需要 full + portable 两个包，必须加 `--portable`**（本地默认只产 full）；需要 Setup.exe 再加 `--installer`。因仓库路径包含 `#`，先把 ZIP/notes 复制到不含 `#` 的临时目录再调用 `gh`，详见 `Docs/lessons/GH_CLI_HASH_PATH_BUG.md`。
 
 ## 7. 排障
 

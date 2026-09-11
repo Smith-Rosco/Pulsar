@@ -6,7 +6,7 @@ Single entry point. Stdlib only (no third-party deps), Python >= 3.10.
 Subcommands (one per former PS script):
   info         release info: repo version, last tag, commits, version suggestion
   set-version  write <Version>/<FileVersion>/<AssemblyVersion> into the csproj (no BOM)
-  build        dotnet publish full + portable (+ optional installer stage)
+  build        dotnet publish full (+ optional portable stage via --portable)
   pack         zip artifacts, PK/CRC verify, optional Setup/Standalone/SHA256SUMS
   all          build + pack + terminal convergence (local pipeline)
   changelog    solidify CHANGELOG.md [Unreleased] into [X.Y.Z] - date
@@ -369,6 +369,7 @@ def cmd_build(args) -> Path:
 
     full_dir = PUBLISH_ROOT / f"v{eff}" / "full"
     portable_dir = PUBLISH_ROOT / f"v{eff}" / "portable"
+    want_portable = args.portable
     commit = git("rev-parse", "--short", "HEAD")
 
     t = REPORT.stage("构建 full（自包含单文件）")
@@ -376,15 +377,23 @@ def cmd_build(args) -> Path:
                 ["--self-contained", "true", "-p:PublishSingleFile=true", "-p:PublishReadyToRun=true"],
                 full_dir, t)
 
-    t = REPORT.stage("构建 portable（框架依赖单文件）")
-    publish_one("portable", version, build,
-                ["--self-contained", "false", "-p:PublishSingleFile=true", "-p:EnableCompressionInSingleFile=false"],
-                portable_dir, t)
+    if want_portable:
+        t = REPORT.stage("构建 portable（框架依赖单文件）")
+        publish_one("portable", version, build,
+                    ["--self-contained", "false", "-p:PublishSingleFile=true", "-p:EnableCompressionInSingleFile=false"],
+                    portable_dir, t)
+    else:
+        # 本地发布默认只产 full（自包含）；portable 是 CI Release 资产，
+        # 需要本地复现时显式加 --portable。
+        REPORT.skip("portable 构建", "本地默认仅产出 full；需要框架依赖包时加 --portable")
 
     t = REPORT.stage("build-info 写入")
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     channel = f"local-{REPORT.meta.get('mode', 'artifact')}" if REPORT.meta.get("mode") != "release" else "release"
-    for d, ch in ((full_dir, "full"), (portable_dir, "portable")):
+    profiles = [("full", full_dir)]
+    if want_portable:
+        profiles.append(("portable", portable_dir))
+    for ch, d in profiles:
         (d / "build-info.txt").write_bytes(
             f"Version: {eff}\r\nBuild: {build or 0}\r\nChannel: {ch}\r\nBuilt: {stamp}\r\nCommit: {commit}\r\n".encode("ascii")
         )
@@ -392,7 +401,10 @@ def cmd_build(args) -> Path:
     REPORT.end_stage(t)
 
     t = REPORT.stage("产物断言")
-    for label, d, rule in (("full", full_dir, "min"), ("portable", portable_dir, "max")):
+    rules = [("full", full_dir, "min")]
+    if want_portable:
+        rules.append(("portable", portable_dir, "max"))
+    for label, d, rule in rules:
         exe = d / "Pulsar.exe"
         ok = exe.is_file() and (d / "Pulsar.pdb").is_file() and (d / "Assets").is_dir()
         REPORT.check(f"{label} exe/PDB/Assets", ok, str(d) if ok else "缺失文件")
@@ -445,7 +457,11 @@ def cmd_pack(args) -> None:
     portable_dir = PUBLISH_ROOT / f"v{eff}" / "portable"
 
     t = REPORT.stage("打包 + PK/CRC 校验")
-    zips = [(full_dir, ARTIFACTS / f"Pulsar-{eff}-full.zip"), (portable_dir, ARTIFACTS / f"Pulsar-{eff}-portable.zip")]
+    zips = [(full_dir, ARTIFACTS / f"Pulsar-{eff}-full.zip")]
+    if args.portable:
+        zips.append((portable_dir, ARTIFACTS / f"Pulsar-{eff}-portable.zip"))
+    else:
+        REPORT.skip("portable 打包", "本地默认仅产出 full；需要框架依赖包时加 --portable")
     for src, dest in zips:
         zip_dir(src, dest)
         REPORT.check(f"ZIP PK+CRC：{dest.name}", True, f"{round(dest.stat().st_size / 1024 / 1024, 1)} MB")
@@ -485,8 +501,11 @@ def cmd_pack(args) -> None:
         if target.is_dir():
             shutil.rmtree(target)
             REPORT.check(f"删除产物目录 publish\\v{eff}", True)
+        expected_zips = {f"Pulsar-{eff}-full.zip"}
+        if args.portable:
+            expected_zips.add(f"Pulsar-{eff}-portable.zip")
         leftovers = [p for p in ARTIFACTS.glob(f"Pulsar-{eff}*")
-                     if p.name not in {f"Pulsar-{eff}-full.zip", f"Pulsar-{eff}-portable.zip"}]
+                     if p.name not in expected_zips]
         REPORT.check("artifacts 根无本次版本的杂散文件", not leftovers,
                      f"残留：{[p.name for p in leftovers]}" if leftovers else "历史版本 ZIP 按设计并存保留")
         REPORT.end_stage(t)
@@ -670,16 +689,19 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("set-version", help="写入 csproj 版本")
     p.add_argument("--version", required=True)
     p.add_argument("--allow-downgrade", action="store_true")
-    p = sub.add_parser("build", help="构建 full + portable")
+    p = sub.add_parser("build", help="构建 full（--portable 追加 portable）")
     add_common(p)
     p.add_argument("--installer", action="store_true", help="打包阶段处理 Setup.exe（ISCC 回退路径）")
+    p.add_argument("--portable", action="store_true", help="同时构建 portable（框架依赖单文件）；本地默认只产 full")
     p = sub.add_parser("pack", help="打包 ZIP + 校验 + 终态收敛")
     add_common(p)
     p.add_argument("--installer", action="store_true")
+    p.add_argument("--portable", action="store_true", help="同时打包 portable；须与 build 的选择一致")
     p.add_argument("--keep-publish-dirs", action="store_true")
     p = sub.add_parser("all", help="build + pack")
     add_common(p)
     p.add_argument("--installer", action="store_true")
+    p.add_argument("--portable", action="store_true", help="同时构建/打包 portable（框架依赖）；本地默认只产 full")
     p.add_argument("--keep-publish-dirs", action="store_true")
     p = sub.add_parser("changelog", help="固化 CHANGELOG Unreleased 段")
     p.add_argument("--version", required=True)
@@ -715,12 +737,18 @@ def main(argv: list[str] | None = None) -> None:
 
     try:
         if args.dry_run:
+            want_portable = getattr(args, "portable", False)
             print("DRY-RUN：以下为将要执行的计划（无副作用）")
             print(f"  command={args.command} version={getattr(args, 'version', '-')}")
             print(f"  full:   dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true")
-            print(f"  portable: dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true")
-            print(f"  断言：full exe ≥ 50 MB / portable exe < 20 MB / PDB / Assets / PK / CRC")
-            print(f"  打包：Artifacts\\Pulsar-<eff>-{{full,portable}}.zip；终态收敛删除 publish\\v<eff>\\")
+            if want_portable:
+                print(f"  portable: dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true")
+                print(f"  断言：full exe ≥ 50 MB / portable exe < 20 MB / PDB / Assets / PK / CRC")
+            else:
+                print(f"  portable: 跳过（本地默认只产 full；加 --portable 追加）")
+                print(f"  断言：full exe ≥ 50 MB / PDB / Assets / PK / CRC")
+            suffix = "{full,portable}" if want_portable else "full"
+            print(f"  打包：Artifacts\\Pulsar-<eff>-{suffix}.zip；终态收敛删除 publish\\v<eff>\\")
             return
         handlers[args.command](args)
     except SystemExit:
