@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Linq;
+using System.Resources;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -17,6 +19,19 @@ namespace Pulsar.Tests.Tutorial
             loc.Setup(l => l.GetString(It.IsAny<string>())).Returns((string key) => key);
             loc.Setup(l => l.CurrentLanguage).Returns("en");
             return new TutorialStepLoader(logger.Object, loc.Object);
+        }
+
+        /// <summary>
+        /// 教程散文的单一来源是 resx：JSON 里的 <c>title</c> / <c>description</c> /
+        /// <c>waitHintText</c> / <c>primaryButtonText</c> 散文副本已删除（它们与 resx 值
+        /// 逐字重复且运行时从不读取）。因此「描述应提到 X」这类断言必须钉 resx 值，
+        /// 而不是钉已经不存在的 JSON 散文 —— 由
+        /// <see cref="TutorialStepLocalizationGuardTests"/> 保证 JSON 只携带键。
+        /// </summary>
+        private static string ResxValue(string key)
+        {
+            var manager = new ResourceManager("Pulsar.Resources.Strings", typeof(Pulsar.Models.ProfilesConfig).Assembly);
+            return manager.GetString(key, CultureInfo.GetCultureInfo("en")) ?? string.Empty;
         }
 
         [Fact]
@@ -100,8 +115,9 @@ namespace Pulsar.Tests.Tutorial
 
             var step4 = steps.FirstOrDefault(s => s.Id == "step4_command_mode_intro");
             step4.Should().NotBeNull();
-            step4!.Description.Should().Contain("Macro");
-            step4.DescriptionKey.Should().Be("Tutorial.Excel.CommandModeDesc");
+            step4!.DescriptionKey.Should().Be("Tutorial.Excel.CommandModeDesc");
+            ResxValue(step4!.DescriptionKey!).Should().Contain("Macro",
+                "the localized text is the only source of this description now");
         }
 
         [Fact]
@@ -112,8 +128,9 @@ namespace Pulsar.Tests.Tutorial
 
             var step4 = steps.FirstOrDefault(s => s.Id == "step4_command_mode_intro");
             step4.Should().NotBeNull();
-            step4!.Description.Should().Contain("Browser Script");
-            step4.DescriptionKey.Should().Be("Tutorial.Browser.CommandModeDesc");
+            step4!.DescriptionKey.Should().Be("Tutorial.Browser.CommandModeDesc");
+            ResxValue(step4!.DescriptionKey!).Should().Contain("Browser Script",
+                "the localized text is the only source of this description now");
         }
     }
 }

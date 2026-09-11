@@ -120,9 +120,6 @@ namespace Pulsar.Features.Tutorial.Services
                 _logger.LogInformation("[TutorialStepLoader] Validating configuration...");
                 ValidateConfig(config);
 
-                // 对没有显式设置 *Key 的步骤应用约定映射
-                ApplyConventionKeys(config.Steps);
-
                 _logger.LogInformation("[TutorialStepLoader] ✅ Successfully loaded {Count} tutorial steps from {Path}", 
                     config.Steps.Count, filePath);
                 
@@ -232,56 +229,6 @@ namespace Pulsar.Features.Tutorial.Services
             }
             
             _logger.LogDebug("[TutorialStepLoader] Config validation passed");
-        }
-
-        /// <summary>
-        /// 对没有显式设置 *Key 的步骤应用约定映射
-        /// 规则：从 step ID 提取最后一个有意义的片段，PascalCase 后拼接成 "Tutorial.{Suffix}"
-        /// 例如：step1_onboarding_welcome → Tutorial.Welcome
-        /// </summary>
-        private static void ApplyConventionKeys(List<TutorialStep> steps)
-        {
-            foreach (var step in steps)
-            {
-                if (string.IsNullOrEmpty(step.TitleKey))
-                {
-                    var titleSuffix = DeriveLocSuffix(step.Id);
-                    if (titleSuffix != null)
-                    {
-                        step.TitleKey = "Tutorial." + titleSuffix;
-                    }
-                }
-
-                if (string.IsNullOrEmpty(step.DescriptionKey))
-                {
-                    var descSuffix = DeriveLocSuffix(step.Id);
-                    if (descSuffix != null)
-                    {
-                        step.DescriptionKey = "Tutorial." + descSuffix + "Desc";
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// 从步骤 ID 推导本地化键后缀
-        /// 格式：去掉 stepN_ 前缀后，取最后一段下划线分隔的单词
-        /// </summary>
-        private static string? DeriveLocSuffix(string stepId)
-        {
-            // 去掉 stepN_ 前缀
-            var match = System.Text.RegularExpressions.Regex.Match(stepId, @"^step\d+_(.+)$");
-            if (!match.Success) return null;
-
-            var remainder = match.Groups[1].Value;
-
-            // 按 _ 分割，取最后一段
-            var parts = remainder.Split('_');
-            var lastSegment = parts.Length > 0 ? parts[^1] : remainder;
-            if (string.IsNullOrEmpty(lastSegment)) return null;
-
-            // PascalCase: 首字母大写
-            return char.ToUpper(lastSegment[0]) + lastSegment[1..];
         }
 
         /// <summary>
