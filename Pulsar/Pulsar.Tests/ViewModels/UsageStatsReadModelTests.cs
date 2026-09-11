@@ -379,6 +379,41 @@ namespace Pulsar.Tests.ViewModels
         }
 
         [Fact]
+        public async Task Project_LastUsedFormatting_ShouldUseTheSharedRecentDaysCeiling()
+        {
+            var clock = new DateTime(2026, 9, 11, 12, 0, 0, DateTimeKind.Local);
+            var plugins = new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };
+            var stat = CreateStats("plugin.a", 100, lastUsed: clock.ToUniversalTime().AddDays(-8));
+
+            var readModel = CreateReadModel(plugins, new Dictionary<string, PluginUsageStats> { { stat.PluginId, stat } }, clock);
+            await readModel.LoadAsync();
+
+            var projection = readModel.Project(AnalyticsTimeRange.AllTime, SortColumn.Executions, ascending: false);
+
+            projection.Rows[0].LastUsedFormatted.Should().Be(
+                string.Format(_loc["Settings.Analytics.DaysAgoFormat"], 8),
+                "eight days sits inside the unified 30-day bucket; the pre-ADR-034 table stopped at 7 and rendered an absolute date");
+        }
+
+        [Fact]
+        public async Task Project_LastUsedFormatting_ShouldFallBackToTheCompactDateBeyondTheCeiling()
+        {
+            var clock = new DateTime(2026, 9, 11, 12, 0, 0, DateTimeKind.Local);
+            var used = clock.ToUniversalTime().AddDays(-31);
+            var plugins = new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };
+            var stat = CreateStats("plugin.a", 100, lastUsed: used);
+
+            var readModel = CreateReadModel(plugins, new Dictionary<string, PluginUsageStats> { { stat.PluginId, stat } }, clock);
+            await readModel.LoadAsync();
+
+            var projection = readModel.Project(AnalyticsTimeRange.AllTime, SortColumn.Executions, ascending: false);
+
+            projection.Rows[0].LastUsedFormatted.Should().Be(
+                used.ToLocalTime().ToString("MM-dd"),
+                "past the ceiling the dense table keeps its compact date style");
+        }
+
+        [Fact]
         public async Task GenerateCsv_ProducesHeaderAndRows()
         {
             var plugins = new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };

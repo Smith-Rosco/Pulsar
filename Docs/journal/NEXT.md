@@ -49,7 +49,7 @@
 - [ ] **（可选）openspec change 与 spec 条目**：本次是新增用户可见能力（视口定位策略），按仓库惯例（`gesture-isolation-filter` / `flick-out-cancel` 等均有 spec + archive change）本应走 `/opsx-propose`。本次直接实现未建 change —— 待用户决定是否补建提案，以及是否在 `openspec/specs/radial-menu/spec.md`（或新建 viewport 类 spec）登记「贴边校正 SHALL 可配置」需求。
 
 - [ ] **架构审查 round（2026-09-11 14:0x，9 候选）余下 8 个**：报告为 `%TEMP%\architecture-review-<ts>.html`（每轮重新生成，不持久化）——候选要点已抄录如下，无需找回报告。
-  - **推荐序（2026-09-11 14:2x 用户确认）**：#2 共享参数规格 → #4 对话框目录 → #3 + #8 快赢 → #9（与 #4 同子系统，可捆绑）→ **暂缓** #6 / #7（结论需真机验收，而验收已暂缓）、#5（动的是嵌入资源结构，待决定）。
+  - **推荐序（2026-09-11 14:2x 用户确认）**：#2 共享参数规格 → #4 对话框目录 → **#3 ✅ 相对时间格式化** → #8 重复 DI 注册 → #9（与 #4 同子系统，可捆绑）→ **暂缓** #6 / #7（结论需真机验收，而验收已暂缓）、#5（动的是嵌入资源结构，待决定）。
   - [x] **#1 Secret 选取器 / 暂存写入收敛到单一 owner —— 已落地（本日 14:1x，grill auto-with-guardrails + TDD）**：新增 `ISecretPickerSeam` + `SettingsSecretPickerSeam`（零状态 adapter）+ `SecretEntryProjection`（纯投影）；`SlotEditorWorkspace.PendingSecrets` 收为 `IReadOnlyDictionary` 视图 + 新增 `UnstageSecret`（`StageSecret` 从 0 生产调用点变回唯一入口）；`SettingsEditorSession.RemoveSecretAsync`（Settings 面恢复唯一写者）；`SecretPickerViewModel` 7 参 → 4 参、首次无 WPF 可测。build **0/0**，全量 **1602/1602**（基线 1585 + 17）。**真机验收待做**：secret 新增 / 编辑 / 删除 / 选取四条路径。
   - [x] `Strong` **#2 插件参数规格升到共享 Module —— 已落地（2026-09-11 14:5x，grill auto-with-guardrails）**：新增 `Core/Plugin/Metadata/SlotParameterSpecs.cs`（2 个多消费者形态工厂 `FilePathParameter` / `ArgumentsParameter` + 2 个 key 常量 `ScriptPathKey` / `ArgumentsKey`；结构字段定死，用户可见文案入参）。
     - **WinSwitcher 私有 `ArgumentsParameter` 拆除**（原 `:212` 的 8 个字段迁入工厂）；VbaRunner / Bookmarklet 的 `scriptPath` 手写块 → `FilePathParameter`；Command 的 `arguments` → `ArgumentsParameter`（`label` / `example` 入参）。原「18 字段中 13 个逐字相同」的手抄面归零。
@@ -58,7 +58,13 @@
     - **⚠ 设计张力已裁定**：`SlotParameterSpecs` 定位为**内建便利入口、不构成稳定性契约**，外部插件自写参数元数据 —— 已写入 `PLUGIN_DEVELOPMENT.md`（新增「内建共享规格（SlotParameterSpecs）」小节）。
     - **范围裁定 + 回退**：工作区里另有一处越界改动（`CommandPluginMetadata` 的 `MinPulsarVersion = null!` → `"1.0.0"` + 配套守卫 `EveryBuiltInPlugin_DeclaresAParsableMinPulsarVersion`）已**回退** —— 该字段生产读取点为 0（全仓 grep + 无序列化路径），为死字段加守卫方向相反；发现另记（见本清单末条）。
     - 验证：build **0 警告 0 错误**；全量 **1606/1606**（基线 1602 + 4，精确对账），失败 0 跳过 0。术语 `CONTEXT.md` 新增 **Slot Parameter Spec**（用户 14:5x 批准）。
-  - [ ] `Strong` **#3 相对时间格式化单一 owner**：3 份实现且阈值已漂移 30/30/**7** 天（`PluginAnalyticsFormatter.cs:75-83` / `PluginViewModel.cs:232-240` / `UsageStatsReadModel.cs:429-439`）；`PluginViewModel._formatter` 无条件赋值（:185）→ `:77/:119` 的手写回退右支不可达。
+  - [x] `Strong` **#3 相对时间格式化单一 owner —— 已落地（2026-09-11 17:0x，grill 单问裁定 + TDD，ADR-034）**：新增 `Pulsar/Pulsar/Core/Formatting/RelativeTimeFormatter.cs`（`Format(utcTimestamp, utcNow, loc, keyPrefix, absoluteFormat)`：四条阶梯边界 + UTC 口径 + 桶顺序全在模块内）。3 份实现收敛为 1 份：`PluginAnalyticsFormatter.FormatTimeAgo` → 单行委托；`PluginViewModel.FormatTimeAgo` **删除**（`:232-240`，唯一调用点是不可达的 `??` 右支）+ `_formatter` 去可空标注 + **8 处不可达 `??` 回退支删除**；`UsageStatsReadModel.FormatLastUsed` → 委托并把时钟读数改为 `Project()` 已算的 `now` 传入。
+    - **阈值统一为 30 天**（用户裁定）：分析页表格 1–29 天显示相对时间，第 30 天起显示 `MM-dd`。**唯一用户可见文案变化**——选 30 的理由是三份实现中 2 份已是 30，且与数据层 `DailyStats` 保留 30 天同族。
+    - **阈值刻意不做成入参**：参数化只会把「漂移」改名成「声明」；机制保证是**调用点无处安放第四个数字**（模块里只有一个常量）。分面差异（resx 键族前缀 + 绝对日期格式）才留参数。
+    - **缺键不再靠内联英文兜底**：`ILocalizationService` 缺键返回键名本身 → 改为守卫断言「formatter 请求的每个键在两个 resx 都存在」，且**键名从实现推导**（每桶记录一次请求），守卫不会与实现一起漂移。
+    - **红证明**：把阈值临时改回 7 + 把前缀改成 `Settings.Bogus` 后窄跑 → **恰好 5 条预期失败**（`Ladder_(29d)`/`(29d23h)` 吐 `2026-08-13`、resx 守卫列 8 个缺失键、两条消费级 8 天断言吐 `09-03`/`2026-09-03`）；回滚后复跑 1635/1635。
+    - 测试：新增 `RelativeTimeFormatterTests`（16 例）+ `PluginAnalyticsFormatterTests`（4 例，`Plugin.*` 族首次有覆盖）+ `UsageStatsReadModelTests` 2 条消费级断言（8 天仍相对，钉死 7 天漂移不回潮）。
+    - 验证：build **0 警告 0 错误**；全量 **1635/1635**（基线 1613 + 22，精确对账），失败 0 跳过 0。
   - [x] `Strong` **#4 对话框目录 Module —— 已落地（2026-09-11 16:5x，grill auto-with-guardrails，ADR-033）**：新增 `Pulsar/Pulsar/Services/DialogCatalog.cs`（`DialogId` 值类型 + `DialogIds` 19 常量 + `DialogRegistration` + 静态 `DialogCatalog`：19 行覆盖 15 个内容类型）；`IDialogService` **纯增量**加 `ShowCustomAsync(DialogId, content, params object[] titleArgs)`；20 个 `ShowCustomAsync` 调用点 + `SettingsDialogFlows` 的 5 个 `RunAsync` 调用者全部改传 `DialogId`，调用点不再自选标题键/尺寸/按钮；4 处内联尺寸（WindowInspector / ExampleLibrary / ScriptEditor / PluginSettings）**逐字**入目录。
     - **守卫从 1 条腿补到 3 条腿**（原先只钉 VM↔DataTemplate）：① 标题键双语存在；② `TitleIsFormat` 与 resx **值**一致（双语）；③ **反向钉**——每个 DataTemplate 必须有目录行或白名单豁免（`sys:String` / ColorPicker / InputDialog，后两者走自带标题的专用 API）。`Pulsar.Tests/Dialogs/DialogCatalogTests.cs`，8 例。
     - **`DialogId` 必须是独立类型而非 `string`**（设计关键）：若新重载用 `string`，两参调用会被既有 `string` 重载吃掉（normal form 优先于 expanded form）→ id 被当成字面标题静默渲染。

@@ -42,7 +42,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly PluginMetadata? _metadata;
         private readonly BuiltInPluginDisplayModel _displayModel;
         private readonly ILocalizationService? _loc;
-        private readonly PluginAnalyticsFormatter? _formatter;
+        private readonly PluginAnalyticsFormatter _formatter;
         private readonly SemaphoreSlim _settingsSaveLock = new(1, 1);
 
         [ObservableProperty]
@@ -72,18 +72,15 @@ namespace Pulsar.ViewModels.Settings
 
         public ObservableCollection<PluginSettingViewModel> Settings { get; } = new();
 
-        public string UsageSummary => _formatter?.FormatUsageSummary(UsageStats) ?? $"{UsageStats.TotalExecutions} uses";
-        public string ProfilesSummary => _formatter?.FormatProfilesSummary(UsageStats) ?? $"{UsageStats.UsedInProfiles.Count} profiles";
-        public string LastUsedSummary => _formatter?.FormatLastUsedSummary(UsageStats) ?? (UsageStats.LastUsed.HasValue ? FormatTimeAgo(UsageStats.LastUsed.Value) : (_loc?["Plugin.NeverUsed"] ?? "Never used"));
-        public string HealthBadge => _formatter?.FormatHealthBadge(HealthReport) ?? HealthReport.Status switch
-        {
-            PluginHealthStatus.Healthy => "\u2705",
-            PluginHealthStatus.Warning => "\u26A0\uFE0F",
-            PluginHealthStatus.Critical => "\U0001f534",
-            PluginHealthStatus.Unused => "\U0001f4a4",
-            PluginHealthStatus.Disabled => "\U0001f6ab",
-            _ => ""
-        };
+        // The analytics formatter is assigned unconditionally in the only constructor, so it
+        // is non-null by construction: the null-coalescing fallbacks that used to hang off
+        // these eight members were unreachable, and the hand-written ladder behind
+        // LastUsedSummary was a dead third copy of the relative-time formatting. Removed by
+        // ADR-034 — relative time now lives only in Core/Formatting/RelativeTimeFormatter.
+        public string UsageSummary => _formatter.FormatUsageSummary(UsageStats);
+        public string ProfilesSummary => _formatter.FormatProfilesSummary(UsageStats);
+        public string LastUsedSummary => _formatter.FormatLastUsedSummary(UsageStats);
+        public string HealthBadge => _formatter.FormatHealthBadge(HealthReport);
 
         /// <summary>健康状态的本地化文本（ToolTip / 无障碍名称），未命中时回退为英文枚举名。</summary>
         public string HealthStatusText
@@ -108,19 +105,11 @@ namespace Pulsar.ViewModels.Settings
         /// <summary>设置对话框（含 Window Inspector）解析依赖用。</summary>
         public IConfigService ConfigService => _configService;
 
-        public string HealthScoreText => _formatter?.FormatHealthScoreText(HealthReport) ?? $"{HealthReport.HealthScore}/100";
-        public string HealthScoreColor => _formatter?.FormatHealthScoreColor(HealthReport) ?? HealthReport.HealthScore switch
-        {
-            >= 90 => "#28a745",
-            >= 70 => "#ffc107",
-            _ => "#dc3545"
-        };
+        public string HealthScoreText => _formatter.FormatHealthScoreText(HealthReport);
+        public string HealthScoreColor => _formatter.FormatHealthScoreColor(HealthReport);
 
-        public string SuccessRateText => _formatter?.FormatSuccessRateText(UsageStats) ?? (UsageStats.TotalExecutions > 0
-            ? $"{(double)UsageStats.SuccessCount / UsageStats.TotalExecutions * 100:F1}%"
-            : (_loc?["Plugin.NA"] ?? "N/A"));
-
-        public string AvgExecutionTimeText => _formatter?.FormatAvgExecutionTimeText(UsageStats) ?? $"{UsageStats.AverageExecutionTimeMs:F0}ms";
+        public string SuccessRateText => _formatter.FormatSuccessRateText(UsageStats);
+        public string AvgExecutionTimeText => _formatter.FormatAvgExecutionTimeText(UsageStats);
         public bool IsViewLogsVisible => RecentErrorCount > 0;
         public string ViewLogsLabel => RecentErrorCount > 0 ? string.Format(_loc?["Settings.Plugins.ViewLogsErrorsFormat"] ?? "View Logs ({0} errors)", RecentErrorCount) : (_loc?["Settings.Plugins.ViewLogsDefault"] ?? "View Logs");
 
@@ -227,16 +216,6 @@ namespace Pulsar.ViewModels.Settings
             OnPropertyChanged(nameof(AvgExecutionTimeText));
             OnPropertyChanged(nameof(IsViewLogsVisible));
             OnPropertyChanged(nameof(ViewLogsLabel));
-        }
-
-        private string FormatTimeAgo(DateTime dateTime)
-        {
-            var span = DateTime.UtcNow - dateTime;
-            if (span.TotalMinutes < 1) return _loc?["Plugin.JustNow"] ?? "Just now";
-            if (span.TotalMinutes < 60) return string.Format(_loc?["Plugin.MinutesAgoFormat"] ?? "{0} minutes ago", (int)span.TotalMinutes);
-            if (span.TotalHours < 24) return string.Format(_loc?["Plugin.HoursAgoFormat"] ?? "{0} hours ago", (int)span.TotalHours);
-            if (span.TotalDays < 30) return string.Format(_loc?["Plugin.DaysAgoFormat"] ?? "{0} days ago", (int)span.TotalDays);
-            return dateTime.ToLocalTime().ToString("yyyy-MM-dd");
         }
 
         private void LoadSettingsFromSchema(ConfigSchema schema)

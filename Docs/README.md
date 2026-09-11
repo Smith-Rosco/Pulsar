@@ -192,6 +192,7 @@ ADRs are immutable once accepted; supersede rather than edit.
 | [031](./decisions/031-secret-fill-rename-plugin-id-frozen.md) | PKI module renamed to Secret Fill — symbols only, plugin id `com.pulsar.pki` frozen |
 | [032](./decisions/032-secret-fill-plugin-id-migration.md) | Secret Fill plugin id unfrozen — renamed to `com.pulsar.secretfill` with load-time config + usage-stats migration |
 | [033](./decisions/033-dialog-catalog-single-registration-surface.md) | Dialog catalog — one registration surface owns each dialog's title key, size preset, buttons and theme |
+| [034](./decisions/034-relative-time-single-owner.md) | Relative-time formatting single owner — one ladder in `Core/Formatting`, "N days ago" ceiling unified at 30 |
 
 ---
 

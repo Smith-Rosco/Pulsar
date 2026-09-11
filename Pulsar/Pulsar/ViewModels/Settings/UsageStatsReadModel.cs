@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Pulsar.Core.Formatting;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
@@ -18,6 +19,15 @@ namespace Pulsar.ViewModels.Settings
     /// </summary>
     public class UsageStatsReadModel
     {
+        /// <summary>
+        /// Resource-key family this read model renders relative times through
+        /// (<c>Settings.Analytics.JustNow</c> / <c>…MinutesAgoFormat</c> / …). The
+        /// compact <c>N m ago</c> style is deliberate for the dense table; the ladder
+        /// and its ceiling still come from the shared formatter. Validated against
+        /// both resx by <c>RelativeTimeFormatterTests</c>.
+        /// </summary>
+        public const string RelativeTimeKeyPrefix = "Settings.Analytics";
+
         private readonly IPluginUsageTracker _usageTracker;
         private readonly IPluginRegistry _pluginRegistry;
         private readonly ILocalizationService _loc;
@@ -143,7 +153,7 @@ namespace Pulsar.ViewModels.Settings
                 .ToList();
 
             var activeStats = filteredStats.Select(x => x.Stats).ToList();
-            var rows = filteredStats.Select(x => BuildRow(x.Stats, x.FilteredExecutions)).ToList();
+            var rows = filteredStats.Select(x => BuildRow(x.Stats, x.FilteredExecutions, now)).ToList();
             rows = ApplySort(rows, sort, ascending);
 
             var slotHeatmap = BuildSlotHeatmap(activeStats, cutoff);
@@ -184,7 +194,7 @@ namespace Pulsar.ViewModels.Settings
             return sb.ToString();
         }
 
-        private AnalyticsItem BuildRow(PluginUsageStats stat, int filteredExecutions)
+        private AnalyticsItem BuildRow(PluginUsageStats stat, int filteredExecutions, DateTime now)
         {
             var displayName = ResolveDisplayName(stat.PluginId);
             return new AnalyticsItem
@@ -219,7 +229,7 @@ namespace Pulsar.ViewModels.Settings
                 ModeSummary = (stat.TaskModeExecutions > 0 || stat.ActionModeExecutions > 0)
                     ? $"{stat.PrimaryMode} ({Math.Max(stat.TaskModeExecutions, stat.ActionModeExecutions)})"
                     : "",
-                LastUsedFormatted = FormatLastUsed(stat.LastUsed)
+                LastUsedFormatted = FormatLastUsed(stat.LastUsed, now)
             };
         }
 
@@ -426,17 +436,18 @@ namespace Pulsar.ViewModels.Settings
             return count.ToString();
         }
 
-        private string FormatLastUsed(DateTime? lastUsed)
-        {
-            if (!lastUsed.HasValue) return "";
-            var local = lastUsed.Value.ToLocalTime();
-            var diff = DateTime.Now - local;
-            if (diff.TotalMinutes < 1) return _loc["Settings.Analytics.JustNow"];
-            if (diff.TotalMinutes < 60) return string.Format(_loc["Settings.Analytics.MinutesAgoFormat"], (int)diff.TotalMinutes);
-            if (diff.TotalHours < 24) return string.Format(_loc["Settings.Analytics.HoursAgoFormat"], (int)diff.TotalHours);
-            if (diff.TotalDays < 7) return string.Format(_loc["Settings.Analytics.DaysAgoFormat"], (int)diff.TotalDays);
-            return local.ToString("MM-dd");
-        }
+        /// <summary>
+        /// Delegates to the single relative-time ladder (ADR-034). The compact date
+        /// fallback (<c>MM-dd</c>) is this surface's own; the bucket boundaries and the
+        /// "N days ago" ceiling come from <see cref="RelativeTimeFormatter"/>. The clock
+        /// reading is passed in rather than taken here so the projection stays
+        /// deterministic under an injected clock.
+        /// </summary>
+        private string FormatLastUsed(DateTime? lastUsed, DateTime localNow)
+            => lastUsed.HasValue
+                ? RelativeTimeFormatter.Format(
+                    lastUsed.Value, localNow.ToUniversalTime(), _loc, RelativeTimeKeyPrefix, "MM-dd")
+                : "";
 
         private static string EscapeCsvField(string field)
         {

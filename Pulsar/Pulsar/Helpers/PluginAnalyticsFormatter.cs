@@ -1,4 +1,5 @@
 using System;
+using Pulsar.Core.Formatting;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
 
@@ -6,6 +7,13 @@ namespace Pulsar.Helpers
 {
     public class PluginAnalyticsFormatter
     {
+        /// <summary>
+        /// Resource-key family this formatter renders relative times through
+        /// (<c>Plugin.JustNow</c> / <c>Plugin.MinutesAgoFormat</c> / …). Validated
+        /// against both resx by <c>RelativeTimeFormatterTests</c>.
+        /// </summary>
+        public const string RelativeTimeKeyPrefix = "Plugin";
+
         private readonly ILocalizationService _loc;
 
         public PluginAnalyticsFormatter(ILocalizationService loc)
@@ -72,14 +80,12 @@ namespace Pulsar.Helpers
             return $"{stats.AverageExecutionTimeMs:F0}ms";
         }
 
+        /// <summary>
+        /// Delegates to the single relative-time ladder (ADR-034). The full-date
+        /// fallback style is this surface's own; the ceiling and the bucket boundaries
+        /// come from <see cref="RelativeTimeFormatter"/>.
+        /// </summary>
         private string FormatTimeAgo(DateTime dateTime)
-        {
-            var span = DateTime.UtcNow - dateTime;
-            if (span.TotalMinutes < 1) return _loc["Plugin.JustNow"];
-            if (span.TotalMinutes < 60) return string.Format(_loc["Plugin.MinutesAgoFormat"], (int)span.TotalMinutes);
-            if (span.TotalHours < 24) return string.Format(_loc["Plugin.HoursAgoFormat"], (int)span.TotalHours);
-            if (span.TotalDays < 30) return string.Format(_loc["Plugin.DaysAgoFormat"], (int)span.TotalDays);
-            return dateTime.ToLocalTime().ToString("yyyy-MM-dd");
-        }
+            => RelativeTimeFormatter.Format(dateTime, DateTime.UtcNow, _loc, RelativeTimeKeyPrefix, "yyyy-MM-dd");
     }
 }
