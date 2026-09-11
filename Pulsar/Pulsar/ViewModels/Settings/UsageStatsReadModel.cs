@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Pulsar.Core.Localization;
+using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 
@@ -43,12 +44,74 @@ namespace Pulsar.ViewModels.Settings
         public async Task LoadAsync()
         {
             var allStats = await Task.Run(() => _usageTracker.GetAllStats());
-            var allPlugins = _pluginRegistry.GetAllPlugins();
-            _displayNames = allPlugins.ToDictionary(
-                p => p.Id,
-                p => PluginLocalization.LocalizePluginName(_loc, p.DisplayName),
-                StringComparer.OrdinalIgnoreCase);
+            _displayNames = BuildDisplayNameMap();
             _allPluginStats = allStats.Values.ToList();
+        }
+
+        /// <summary>
+        /// 构造 插件ID → 本地化显示名 的查表。
+        ///
+        /// <para>
+        /// 两个数据源按优先级叠加，缺一不可：
+        /// <list type="number">
+        /// <item><see cref="IPluginRegistry.GetAllPluginDescriptors"/> —— **全部已发现**插件，
+        /// 覆盖 Extension 插件（command / bookmarklet / vbarunner 等）。这些插件按需激活，
+        /// 在本次会话尚未被调用时并不存在于激活表，仅靠激活实例取名会让它们掉回原始 ID 显示。
+        /// </item>
+        /// <item><see cref="IPluginRegistry.GetAllPlugins"/> —— 已激活实例，其
+        /// <see cref="IPulsarPlugin.DisplayName"/> 是权威值（外部插件清单可能滞后），覆盖描述符。
+        /// </item>
+        /// </list>
+        /// </para>
+        ///
+        /// <para>
+        /// 键统一过 <see cref="PluginIds.Normalize"/>：历史 ID（如 <c>com.pulsar.pki</c>）
+        /// 与当前 ID 归一到同一键，避免存量统计行取不到名字。
+        /// 已卸载 / 未发现的插件不在表内，调用方仍回退到原始 ID（无来源可推导其名称）。
+        /// </para>
+        /// </summary>
+        private Dictionary<string, string> BuildDisplayNameMap()
+        {
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            var descriptors = _pluginRegistry.GetAllPluginDescriptors();
+            if (descriptors != null)
+            {
+                foreach (var descriptor in descriptors)
+                {
+                    TryAddDisplayName(map, descriptor.Id, descriptor.DisplayName);
+                }
+            }
+
+            var plugins = _pluginRegistry.GetAllPlugins();
+            if (plugins != null)
+            {
+                foreach (var plugin in plugins)
+                {
+                    var key = PluginIds.Normalize(plugin.Id);
+                    if (!string.IsNullOrEmpty(key) && !string.IsNullOrWhiteSpace(plugin.DisplayName))
+                    {
+                        map[key] = PluginLocalization.LocalizePluginName(_loc, plugin.DisplayName);
+                    }
+                }
+            }
+
+            return map;
+        }
+
+        private void TryAddDisplayName(Dictionary<string, string> map, string? pluginId, string? displayName)
+        {
+            var key = PluginIds.Normalize(pluginId);
+            if (string.IsNullOrEmpty(key) || string.IsNullOrWhiteSpace(displayName))
+            {
+                return;
+            }
+
+            // 描述符阶段先到先得：同一归一化 ID 重复注册时不互相覆盖。
+            if (!map.ContainsKey(key))
+            {
+                map[key] = PluginLocalization.LocalizePluginName(_loc, displayName);
+            }
         }
 
         /// <summary>
@@ -123,7 +186,7 @@ namespace Pulsar.ViewModels.Settings
 
         private AnalyticsItem BuildRow(PluginUsageStats stat, int filteredExecutions)
         {
-            var displayName = _displayNames.TryGetValue(stat.PluginId, out var name) ? name : stat.PluginId;
+            var displayName = ResolveDisplayName(stat.PluginId);
             return new AnalyticsItem
             {
                 PluginId = stat.PluginId,
@@ -158,6 +221,17 @@ namespace Pulsar.ViewModels.Settings
                     : "",
                 LastUsedFormatted = FormatLastUsed(stat.LastUsed)
             };
+        }
+
+        /// <summary>
+        /// 查显示名；未命中（插件已卸载 / 未发现）时回退原始 ID。
+        /// 查表前先归一化，兼容历史 ID 的存量统计。
+        /// </summary>
+        private string ResolveDisplayName(string pluginId)
+        {
+            return _displayNames.TryGetValue(PluginIds.Normalize(pluginId), out var name)
+                ? name
+                : pluginId;
         }
 
         private static List<AnalyticsItem> ApplySort(List<AnalyticsItem> rows, SortColumn sort, bool ascending)

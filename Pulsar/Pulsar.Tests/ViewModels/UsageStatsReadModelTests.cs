@@ -61,8 +61,98 @@ namespace Pulsar.Tests.ViewModels
         private UsageStatsReadModel CreateReadModel(List<IPulsarPlugin> plugins, Dictionary<string, PluginUsageStats> allStats, DateTime? clock = null)
         {
             _registryMock.Setup(r => r.GetAllPlugins()).Returns(plugins);
+            _registryMock.Setup(r => r.GetAllPluginDescriptors()).Returns(new List<PluginDescriptor>());
             _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(allStats);
             return new UsageStatsReadModel(_usageTrackerMock.Object, _registryMock.Object, _loc, clock: clock == null ? null : () => clock.Value);
+        }
+
+        private static PluginDescriptor CreateDescriptor(string id, string displayName)
+        {
+            return new PluginDescriptor
+            {
+                Id = id,
+                DisplayName = displayName,
+                Version = "1.0.0",
+                Author = "Pulsar Team",
+                Description = string.Empty,
+                Icon = string.Empty,
+                CanDisable = true,
+                Tier = PluginTier.Extension,
+                Dependencies = Array.Empty<string>(),
+                Metadata = new Pulsar.Core.Plugin.Metadata.PluginMetadata
+                {
+                    Id = id,
+                    Display = new Pulsar.Core.Plugin.Metadata.DisplayInfo
+                    {
+                        Name = displayName,
+                        Description = string.Empty,
+                        IconKey = string.Empty
+                    },
+                    UI = new Pulsar.Core.Plugin.Metadata.UIHints
+                    {
+                        Badge = string.Empty,
+                        AccentColor = "#000000"
+                    },
+                    Capabilities = new Pulsar.Core.Plugin.Metadata.PluginCapabilities()
+                },
+                IsConfigurable = false
+            };
+        }
+
+        [Fact]
+        public async Task Project_UsesDescriptorName_ForPluginThatIsNotActivated()
+        {
+            // Extension 插件按需激活：本次会话未调用时不在 GetAllPlugins() 里，
+            // 但仍应显示本地化名（com.pulsar.vbarunner → Excel Macros 的本地化值）而非原始 ID。
+            var descriptors = new List<PluginDescriptor> { CreateDescriptor("com.pulsar.vbarunner", "Excel Macros") };
+            var stat = CreateStats("com.pulsar.vbarunner", 12);
+
+            _registryMock.Setup(r => r.GetAllPlugins()).Returns(new List<IPulsarPlugin>());
+            _registryMock.Setup(r => r.GetAllPluginDescriptors()).Returns(descriptors);
+            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(new Dictionary<string, PluginUsageStats> { { stat.PluginId, stat } });
+
+            var readModel = new UsageStatsReadModel(_usageTrackerMock.Object, _registryMock.Object, _loc);
+            await readModel.LoadAsync();
+
+            var projection = readModel.Project(AnalyticsTimeRange.AllTime, SortColumn.Executions, ascending: false);
+
+            projection.Rows.Should().HaveCount(1);
+            projection.Rows[0].DisplayName.Should().NotBe("com.pulsar.vbarunner",
+                "已发现但未激活的插件必须走描述符取名，不能掉回原始 ID");
+            projection.Rows[0].DisplayName.Should().Be(PluginLocalization.LocalizePluginName(_loc, "Excel Macros"));
+        }
+
+        [Fact]
+        public async Task Project_ResolvesLegacyPluginId_ToCurrentDisplayName()
+        {
+            // ADR-032：com.pulsar.pki 是 SecretFill 的历史 ID，存量统计里仍可能存在。
+            var descriptors = new List<PluginDescriptor> { CreateDescriptor("com.pulsar.secretfill", "AutoFill") };
+            var stat = CreateStats("com.pulsar.pki", 7);
+
+            _registryMock.Setup(r => r.GetAllPlugins()).Returns(new List<IPulsarPlugin>());
+            _registryMock.Setup(r => r.GetAllPluginDescriptors()).Returns(descriptors);
+            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(new Dictionary<string, PluginUsageStats> { { stat.PluginId, stat } });
+
+            var readModel = new UsageStatsReadModel(_usageTrackerMock.Object, _registryMock.Object, _loc);
+            await readModel.LoadAsync();
+
+            var projection = readModel.Project(AnalyticsTimeRange.AllTime, SortColumn.Executions, ascending: false);
+
+            projection.Rows[0].DisplayName.Should().Be(PluginLocalization.LocalizePluginName(_loc, "AutoFill"));
+        }
+
+        [Fact]
+        public async Task Project_FallsBackToRawId_WhenPluginIsUnknown()
+        {
+            // 已卸载 / 未发现的插件无名称来源，保留原始 ID（不伪造名字）。
+            var stat = CreateStats("com.vendor.removed", 3);
+
+            var readModel = CreateReadModel(new List<IPulsarPlugin>(), new Dictionary<string, PluginUsageStats> { { stat.PluginId, stat } });
+            await readModel.LoadAsync();
+
+            var projection = readModel.Project(AnalyticsTimeRange.AllTime, SortColumn.Executions, ascending: false);
+
+            projection.Rows[0].DisplayName.Should().Be("com.vendor.removed");
         }
 
         [Fact]
