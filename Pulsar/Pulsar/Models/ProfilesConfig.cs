@@ -265,6 +265,37 @@ namespace Pulsar.Models
         /// </summary>
         public double QuickSwitchCenterZoneRadius { get; set; } = 30.0;
 
+        // [Edge Clamp] Screen-edge correction of the radial menu center.
+        /// <summary>
+        /// Default value of <see cref="EdgeClampMarginDip"/>. Equal to the radial menu
+        /// canvas's own visual extent (260 DIP, window 500x500 plus title/slot overshoot),
+        /// so the default keeps the whole wheel inside the work area — i.e. exactly the
+        /// always-on behaviour that shipped before the option existed.
+        /// <c>RadialMenuWindow.MenuVisualExtentDip</c> aliases this constant, so the
+        /// geometry has a single source of truth instead of two drifting literals.
+        /// </summary>
+        public const double DefaultEdgeClampMarginDip = 260.0;
+
+        /// <summary>
+        /// When true (default) the radial menu center is pushed inward while the
+        /// invocation point sits near a work-area edge, so the wheel stays fully
+        /// visible. When false the menu is centered exactly on the pointer, even if
+        /// part of the wheel leaves the screen. Applies to every summon path (hotkey,
+        /// right-drag gesture) and only affects placement, never sizing.
+        /// </summary>
+        [ObservableProperty]
+        private bool _edgeClampEnabled = true;
+
+        /// <summary>
+        /// Distance, in WPF DIPs, between the corrected menu center and the work-area
+        /// edge while <see cref="EdgeClampEnabled"/> is true. Values below the wheel's
+        /// own visual extent let the wheel spill past the edge; larger values leave
+        /// extra clearance. The clamp is additionally capped at half the work area so
+        /// the range never inverts. Ignored while edge correction is off.
+        /// </summary>
+        [ObservableProperty]
+        private double _edgeClampMarginDip = DefaultEdgeClampMarginDip;
+
     // [Tutorial] Tutorial System Configuration
     /// <summary>
     /// <para>是否已完成教程。</para>

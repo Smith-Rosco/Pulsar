@@ -2639,6 +2639,24 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <data name="Settings.ExternalPlugins.ByAuthor" xml:space="preserve">
     <value>by </value>
   </data>
+  <data name="Settings.General.EdgeClamp" xml:space="preserve">
+    <value>Edge correction</value>
+  </data>
+  <data name="Settings.General.EdgeClampDescription" xml:space="preserve">
+    <value>Push the wheel inward near screen edges</value>
+  </data>
+  <data name="Settings.General.EdgeClampDescriptionDetail" xml:space="preserve">
+    <value>When the menu is summoned close to a screen edge, its center is pushed inward so the whole wheel stays visible. Turn this off to always center the menu on the pointer, even if part of the wheel leaves the screen.</value>
+  </data>
+  <data name="Settings.General.EdgeClampMargin" xml:space="preserve">
+    <value>Center distance from screen edge (px)</value>
+  </data>
+  <data name="Settings.General.EdgeClampMarginDescription" xml:space="preserve">
+    <value>Distance from the corrected center to the work-area edge</value>
+  </data>
+  <data name="Settings.General.EdgeClampMarginDescriptionDetail" xml:space="preserve">
+    <value>Only used while edge correction is on. The default 260 px equals the menu's own visual extent, so the wheel stays fully on screen. Smaller values let the wheel get closer to the edge (and spill past it); larger values add extra clearance.</value>
+  </data>
     <data name="Settings.General.QuickSwitchTimeout" xml:space="preserve">
     <value>Quick-switch window (ms)</value>
   </data>

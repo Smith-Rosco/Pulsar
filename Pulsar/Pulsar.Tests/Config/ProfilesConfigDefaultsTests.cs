@@ -114,6 +114,18 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
+        public void ProfileSettings_EdgeClamp_ShouldBeOnByDefaultWithWheelExtentMargin()
+        {
+            // Act
+            var settings = new ProfileSettings();
+
+            // Assert
+            settings.EdgeClampEnabled.Should().BeTrue("edge correction preserves the shipped behaviour");
+            settings.EdgeClampMarginDip.Should().Be(ProfileSettings.DefaultEdgeClampMarginDip);
+            settings.EdgeClampMarginDip.Should().BeGreaterThan(0, "a non-positive default would let the wheel leave the screen");
+        }
+
+        [Fact]
         public void ProfileSettings_RightDragModifiersConflict_ShouldDetectDuplicateModifier()
         {
             // Arrange

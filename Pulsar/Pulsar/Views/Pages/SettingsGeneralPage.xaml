@@ -93,6 +93,37 @@
                                           SpinButtonPlacementMode="Inline"
                                           Width="{StaticResource Pulsar.Settings.ControlWidth}"/>
                         </controls:SettingsRow>
+
+                        <!-- [Edge Clamp] 屏幕边缘校正：开关 + 校正后中心离边缘的距离。
+                             作用于全部唤起通道（热键 / 右键手势），故与手势开关无关。 -->
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.EdgeClamp}"
+                                              Description="{lex:Locale Settings.General.EdgeClampDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.EdgeClampDescriptionDetail}">
+                            <ui:ToggleSwitch IsChecked="{Binding EdgeClampEnabled, Mode=TwoWay}"
+                                             AutomationProperties.AutomationId="Pulsar.Settings.EdgeClampToggle"/>
+                        </controls:SettingsRow>
+
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.EdgeClampMargin}"
+                                              Description="{lex:Locale Settings.General.EdgeClampMarginDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.EdgeClampMarginDescriptionDetail}">
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="{Binding EdgeClampEnabled}">
+                                <Slider Width="140"
+                                        Minimum="0"
+                                        Maximum="600"
+                                        IsSnapToTickEnabled="True"
+                                        TickFrequency="10"
+                                        Value="{Binding EdgeClampMarginDip, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        VerticalAlignment="Center"
+                                        AutomationProperties.AutomationId="Pulsar.Settings.EdgeClampMarginSlider"/>
+                                <TextBlock Text="{Binding EdgeClampMarginDip, StringFormat={}{0:0}px}"
+                                           Margin="{StaticResource Pulsar.Gap.Left.SM}"
+                                           VerticalAlignment="Center"
+                                           MinWidth="48"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                        </controls:SettingsRow>
                     </StackPanel>
                 </ui:CardExpander>
 

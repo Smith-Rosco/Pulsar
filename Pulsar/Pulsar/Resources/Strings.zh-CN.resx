@@ -4143,7 +4143,25 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     <data name="Settings.ExternalPlugins.ByAuthor" xml:space="preserve">
     <value>作者：</value>
   </data>
-    <data name="Settings.General.QuickSwitchTimeout" xml:space="preserve">
+    <data name="Settings.General.EdgeClamp" xml:space="preserve">
+    <value>贴边校正</value>
+  </data>
+  <data name="Settings.General.EdgeClampDescription" xml:space="preserve">
+    <value>靠近屏幕边缘时把轮盘向内推</value>
+  </data>
+  <data name="Settings.General.EdgeClampDescriptionDetail" xml:space="preserve">
+    <value>当菜单在靠近屏幕边缘处唤出时，中心会被向内推移，保证整个轮盘完整可见。关闭后菜单始终以鼠标位置为中心，即使一部分轮盘超出屏幕。</value>
+  </data>
+  <data name="Settings.General.EdgeClampMargin" xml:space="preserve">
+    <value>中心距屏幕边缘（像素）</value>
+  </data>
+  <data name="Settings.General.EdgeClampMarginDescription" xml:space="preserve">
+    <value>校正后的中心到工作区边缘的距离</value>
+  </data>
+  <data name="Settings.General.EdgeClampMarginDescriptionDetail" xml:space="preserve">
+    <value>仅在贴边校正开启时生效。默认 260 像素等于轮盘自身的可视半径，即轮盘完整留在屏幕内。调小可让轮盘更贴边（可能超出屏幕），调大则留出更多余量。</value>
+  </data>
+  <data name="Settings.General.QuickSwitchTimeout" xml:space="preserve">
     <value>快速切换窗口（毫秒）</value>
   </data>
   <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">

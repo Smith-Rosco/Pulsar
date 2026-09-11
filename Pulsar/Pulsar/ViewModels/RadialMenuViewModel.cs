@@ -436,6 +436,18 @@ namespace Pulsar.ViewModels
 
         public Point? GetInvocationPointScreen() => _session.GetInvocationPointScreen();
 
+        /// <summary>
+        /// Screen-edge correction policy for the menu center, read from the live config
+        /// snapshot at summon time so a settings change takes effect from the next summon
+        /// without restarting. Kept as a read-only projection — the settings editor owns
+        /// the persisted values.
+        /// </summary>
+        public MenuEdgeClampOptions GetEdgeClampOptions()
+        {
+            var settings = _configService.GetSnapshot().Settings;
+            return new MenuEdgeClampOptions(settings.EdgeClampEnabled, settings.EdgeClampMarginDip);
+        }
+
         /// <summary>Debug-only: override the screen coordinate the next menu summon
         /// will centre on (E2E deterministic positioning). Pass physical screen px.</summary>
         public void DebugSetInvocationPointScreen(Point point) => _session.SetInvocationPointScreen(point);

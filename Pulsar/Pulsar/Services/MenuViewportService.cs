@@ -16,7 +16,11 @@ namespace Pulsar.Services
 
         public MenuViewportLayout? CurrentLayout { get; private set; }
 
-        public MenuViewportLayout PrepareViewport(Window window, double menuExtentDip, Point? cursorScreenPoint = null)
+        public MenuViewportLayout PrepareViewport(
+            Window window,
+            double menuExtentDip,
+            Point? cursorScreenPoint = null,
+            MenuEdgeClampOptions? edgeClamp = null)
         {
             if (window == null)
             {
@@ -80,7 +84,7 @@ namespace Pulsar.Services
                 (work.Bottom - work.Top) / scaleY);
 
             var cursorDip = new Point(cursor.X / scaleX, cursor.Y / scaleY);
-            var menuCenter = ClampMenuCenter(workAreaDip, cursorDip, menuExtentDip);
+            var menuCenter = ResolveMenuCenter(workAreaDip, cursorDip, menuExtentDip, edgeClamp);
             bool pointerWarpRequired = RequiresPointerWarp(menuCenter, cursorDip);
 
             // Expand the window to exactly the current monitor work area. A one-pixel
@@ -144,12 +148,44 @@ namespace Pulsar.Services
         }
 
         /// <summary>
+        /// Applies the edge-correction policy to the pointer position. Pure viewport math,
+        /// separated for deterministic unit tests.
+        /// <para>
+        /// <c>null</c> keeps the wheel's own visual extent inside the work area (legacy
+        /// behaviour, no user preference expressed); an explicit policy either moves the
+        /// center to the configured distance from the edge or leaves it on the pointer.
+        /// A disabled policy returns the pointer untouched, which in turn makes
+        /// <see cref="RequiresPointerWarp"/> false — the pointer is never warped when the
+        /// center did not move.
+        /// </para>
+        /// </summary>
+        internal static Point ResolveMenuCenter(
+            Rect workAreaDip,
+            Point cursorDip,
+            double menuExtentDip,
+            MenuEdgeClampOptions? edgeClamp)
+        {
+            if (edgeClamp is { Enabled: false })
+            {
+                return cursorDip;
+            }
+
+            return ClampMenuCenter(workAreaDip, cursorDip, edgeClamp?.MarginDip ?? menuExtentDip);
+        }
+
+        /// <summary>
         /// Pure viewport math, separated for deterministic unit tests.
         /// </summary>
-        internal static Point ClampMenuCenter(Rect workAreaDip, Point cursorDip, double menuExtentDip)
+        internal static Point ClampMenuCenter(Rect workAreaDip, Point cursorDip, double marginDip)
         {
-            double horizontalMargin = Math.Min(menuExtentDip, workAreaDip.Width / 2);
-            double verticalMargin = Math.Min(menuExtentDip, workAreaDip.Height / 2);
+            // A negative margin would invert the clamp range (and let the center leave
+            // the screen), so it is floored at zero rather than trusted from config.
+            double margin = Math.Max(0, marginDip);
+
+            // On work areas smaller than the margin (very small screens / high scaling)
+            // no centering math can help; fall back to pinning the center to the middle.
+            double horizontalMargin = Math.Min(margin, workAreaDip.Width / 2);
+            double verticalMargin = Math.Min(margin, workAreaDip.Height / 2);
 
             return new Point(
                 Math.Clamp(

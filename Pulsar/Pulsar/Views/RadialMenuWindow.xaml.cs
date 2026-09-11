@@ -31,8 +31,11 @@ namespace Pulsar.Views
         private readonly IMenuViewportService _menuViewportService;
 
         // Full visual extent of the 500x500 menu canvas, including title and slot
-        // overshoot. The viewport service keeps this extent inside the work area.
-        private const double MenuVisualExtentDip = 260;
+        // overshoot. The viewport service keeps this extent inside the work area, and it
+        // is also the default value of the user-facing center-to-edge margin
+        // (ProfileSettings.DefaultEdgeClampMarginDip) — aliased here so the geometry has
+        // a single source of truth instead of two drifting literals.
+        private const double MenuVisualExtentDip = Pulsar.Models.ProfileSettings.DefaultEdgeClampMarginDip;
 
         public RadialMenuWindow(
             RadialMenuViewModel vm,
@@ -145,14 +148,20 @@ namespace Pulsar.Views
             // The ViewModel captures PulsarContext BEFORE this window becomes visible.
 
             // 1. Expand the resident 1x1 window to the work area of the monitor under
-            //    the cursor, then place the 500x500 menu canvas around the clamped
-            //    pointer position.
-            var viewport = _menuViewportService.PrepareViewport(this, MenuVisualExtentDip, _viewModel.GetInvocationPointScreen());
+            //    the cursor, then place the 500x500 menu canvas around the pointer
+            //    position — corrected inward near screen edges unless the user turned
+            //    that correction off or moved the margin.
+            var viewport = _menuViewportService.PrepareViewport(
+                this,
+                MenuVisualExtentDip,
+                _viewModel.GetInvocationPointScreen(),
+                _viewModel.GetEdgeClampOptions());
             _viewModel.SetMenuCenter(viewport.MenuCenterDip);
 
             // Kando-style pointer correction: when the menu center had to move away
             // from the cursor near a screen edge, warp the pointer onto the center so
-            // the "menu follows pointer" invariant is restored.
+            // the "menu follows pointer" invariant is restored. Never fires while edge
+            // correction is disabled — the center then equals the cursor.
             if (viewport.PointerWarpRequired)
             {
                 int physicalX = (int)Math.Round(viewport.MenuCenterDip.X * viewport.DpiScaleX);
