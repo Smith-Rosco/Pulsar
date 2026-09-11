@@ -185,7 +185,74 @@ namespace Pulsar
             base.OnStartup(e);
 
             var serviceCollection = new ServiceCollection();
+            RegisterApplicationServices(serviceCollection, levelSwitch, debugOptions);
+            
+            // Build Container
+            Services = serviceCollection.BuildServiceProvider();
 
+            // Initialize static helpers that need logging
+            var loggerFactory = Services.GetRequiredService<ILoggerFactory>();
+            IconHelper.Initialize(loggerFactory);
+            UiaHelper.Initialize(loggerFactory);
+            Pulsar.Plugins.Extensions.BookmarkletRunner.BrowserHelper.Initialize(loggerFactory);
+
+            // VBA runner internals
+            Pulsar.Plugins.Extensions.VbaRunner.ScriptEngine.Initialize(loggerFactory);
+            Pulsar.Plugins.Extensions.VbaRunner.ComRetryHelper.Initialize(loggerFactory);
+            Pulsar.Plugins.Extensions.VbaRunner.ComConnectionManager.Initialize(loggerFactory);
+            Pulsar.Plugins.Extensions.VbaRunner.VbaModuleInjector.Initialize(loggerFactory);
+
+            var startupCoordinator = Services.GetRequiredService<IAppStartupCoordinator>();
+            Dispatcher.BeginInvoke(async () =>
+            {
+                try
+                {
+                    await startupCoordinator.RunBlockingInitializationAsync();
+                    startupCoordinator.StartDeferredInitialization();
+                }
+                catch (Exception ex)
+                {
+                    Log.Fatal(ex, "Blocking startup initialization failed");
+                    Shutdown();
+                }
+            }, DispatcherPriority.Loaded);
+
+            // --settings flag (QA/debug): open Settings window after startup completes.
+            // Does not affect production behavior (flag absent by default).
+            if (Array.IndexOf(e.Args, "--settings") >= 0)
+            {
+                Dispatcher.BeginInvoke(async () =>
+                {
+                    await Task.Delay(2500);
+                    try
+                    {
+                        var settingsWindow = Services.GetRequiredService<Views.SettingsWindow>();
+                        settingsWindow.Show();
+                        Log.Information("[--settings] SettingsWindow opened via CLI flag");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "[--settings] Failed to open SettingsWindow");
+                    }
+                }, DispatcherPriority.Background);
+            }
+
+        }
+
+        /// <summary>
+        /// Composition root: registers every application service. Extracted from
+        /// <see cref="OnStartup"/> so the graph can be built — and guarded — from tests
+        /// (see CompositionRootTests) instead of only existing as an untestable inline
+        /// block. Registration order is load-bearing and must not be reshuffled: the
+        /// radial renderers register Default LAST so the legacy
+        /// GetService&lt;IRadialRenderer&gt;() fallback resolves to Default, and the ui-debug
+        /// factories stay fail-closed (they throw outside ui-debug).
+        /// </summary>
+        internal static IServiceCollection RegisterApplicationServices(
+            IServiceCollection serviceCollection,
+            LoggingLevelSwitch levelSwitch,
+            DebugModeOptions debugOptions)
+        {
             // 0. Logging Services
             serviceCollection.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
             serviceCollection.AddSingleton(levelSwitch);
@@ -363,8 +430,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.Prerequisites.ExcelPrerequisiteProvider>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.Prerequisites.BrowserPrerequisiteProvider>();
             serviceCollection.AddSingleton<Pulsar.Services.ExampleLibraryService>();
-            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.StartupCoordinator>();
-            
+
             // Tutorial Service
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.TutorialStepLoader>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.TriggerHandlers.ITriggerHandlerFactory, Pulsar.Features.Tutorial.Services.TriggerHandlers.TriggerHandlerFactory>();
@@ -376,10 +442,11 @@ namespace Pulsar
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ITutorialTriggerEngine, Pulsar.Features.Tutorial.Services.TutorialTriggerEngine>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ITutorialSpotlightController, Pulsar.Features.Tutorial.Services.TutorialSpotlightController>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.IWaitStepHintTimeout, Pulsar.Features.Tutorial.Services.WaitStepHintTimeout>();
-            serviceCollection.AddSingleton<ILocalizationService, LocalizationService>();
+            // ILocalizationService belongs to AddPluginFoundation (called above), which the WPF
+            // app and Pulsar.Simulator share so their wiring cannot drift. The extra row that
+            // used to sit here was a dead duplicate — the later AddPluginFoundation row won.
             serviceCollection.AddSingleton<Features.Tutorial.Services.StartupCoordinator>();
             serviceCollection.AddSingleton<ITutorialService, TutorialService>();
-            serviceCollection.AddSingleton<IDialogService, DialogService>();
             serviceCollection.AddSingleton<ILogger<Pulsar.Features.Tutorial.Services.TutorialOrchestrator>>(sp =>
                 sp.GetRequiredService<ILoggerFactory>().CreateLogger<Pulsar.Features.Tutorial.Services.TutorialOrchestrator>());
 
@@ -530,57 +597,8 @@ namespace Pulsar
             serviceCollection.AddTransient<Pulsar.ViewModels.Dialogs.FirstLaunchSetupWizardViewModel>();
 
             serviceCollection.AddTransient<SettingsWindow>();
-            
-            // Build Container
-            Services = serviceCollection.BuildServiceProvider();
 
-            // Initialize static helpers that need logging
-            var loggerFactory = Services.GetRequiredService<ILoggerFactory>();
-            IconHelper.Initialize(loggerFactory);
-            UiaHelper.Initialize(loggerFactory);
-            Pulsar.Plugins.Extensions.BookmarkletRunner.BrowserHelper.Initialize(loggerFactory);
-
-            // VBA runner internals
-            Pulsar.Plugins.Extensions.VbaRunner.ScriptEngine.Initialize(loggerFactory);
-            Pulsar.Plugins.Extensions.VbaRunner.ComRetryHelper.Initialize(loggerFactory);
-            Pulsar.Plugins.Extensions.VbaRunner.ComConnectionManager.Initialize(loggerFactory);
-            Pulsar.Plugins.Extensions.VbaRunner.VbaModuleInjector.Initialize(loggerFactory);
-
-            var startupCoordinator = Services.GetRequiredService<IAppStartupCoordinator>();
-            Dispatcher.BeginInvoke(async () =>
-            {
-                try
-                {
-                    await startupCoordinator.RunBlockingInitializationAsync();
-                    startupCoordinator.StartDeferredInitialization();
-                }
-                catch (Exception ex)
-                {
-                    Log.Fatal(ex, "Blocking startup initialization failed");
-                    Shutdown();
-                }
-            }, DispatcherPriority.Loaded);
-
-            // --settings flag (QA/debug): open Settings window after startup completes.
-            // Does not affect production behavior (flag absent by default).
-            if (Array.IndexOf(e.Args, "--settings") >= 0)
-            {
-                Dispatcher.BeginInvoke(async () =>
-                {
-                    await Task.Delay(2500);
-                    try
-                    {
-                        var settingsWindow = Services.GetRequiredService<Views.SettingsWindow>();
-                        settingsWindow.Show();
-                        Log.Information("[--settings] SettingsWindow opened via CLI flag");
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "[--settings] Failed to open SettingsWindow");
-                    }
-                }, DispatcherPriority.Background);
-            }
-
+            return serviceCollection;
         }
 
         private void RunShutdownTask(string phase, Func<Task> taskFactory)
