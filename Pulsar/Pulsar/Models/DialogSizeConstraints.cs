@@ -41,6 +41,13 @@ namespace Pulsar.Models
     public bool SizeToContent { get; set; }
 
     /// <summary>
+    /// If true, window height grows to fit content while Width stays fixed
+    /// (SizeToContent.Height). Beyond MaxHeight the content template's
+    /// ScrollViewer takes over. Ignored when SizeToContent is true.
+    /// </summary>
+    public bool AutoHeight { get; set; }
+
+    /// <summary>
     /// If true, allows user to resize the dialog window.
     /// </summary>
     public bool AllowResize { get; set; }
@@ -135,6 +142,21 @@ namespace Pulsar.Models
         MinHeight = 300,
         MaxWidth = 1200,
         MaxHeight = 800,
+        AllowResize = false,
+        ShowMaximizeButton = false
+    };
+
+    /// <summary>
+    /// Message dialog preset (420 wide, height grows with content up to 480,
+    /// then the string template's ScrollViewer scrolls). Suitable for
+    /// ShowMessageAsync / ShowConfirmationAsync bodies of arbitrary length.
+    /// </summary>
+    public static DialogSizeConstraints Message => new()
+    {
+        Width = 420,
+        AutoHeight = true,
+        MinHeight = 180,
+        MaxHeight = 480,
         AllowResize = false,
         ShowMaximizeButton = false
     };

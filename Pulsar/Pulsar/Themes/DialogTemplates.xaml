@@ -6,7 +6,12 @@
 
     <!-- Default String Template -->
     <DataTemplate DataType="{x:Type sys:String}">
-        <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="{StaticResource Pulsar.Type.Subtitle}" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        <!-- ScrollViewer: message bodies grow with the window (AutoHeight cap) and
+             scroll beyond it instead of clipping at the window edge. -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="{StaticResource Pulsar.Type.Subtitle}" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        </ScrollViewer>
     </DataTemplate>
 
     <DataTemplate DataType="{x:Type dialogs:ProcessBlacklistViewModel}">

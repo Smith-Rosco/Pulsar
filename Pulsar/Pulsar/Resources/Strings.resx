@@ -1046,7 +1046,7 @@
     <value>Reset Configuration</value>
   </data>
   <data name="Notification.ResetConfirmBody" xml:space="preserve">
-    <value>This will restore Pulsar to its first-launch state, recreate the default profiles, and restart onboarding eligibility.\n\nA backup of your current configuration will be created before reset.\nAre you sure you want to proceed?</value>
+    <value>This will restore Pulsar to its first-launch state, recreate the default profiles, and restart onboarding eligibility.&#10;&#10;A backup of your current configuration will be created before reset.&#10;Are you sure you want to proceed?</value>
   </data>
   <data name="Notification.RestoreFirstLaunch" xml:space="preserve">
     <value>Restore First Launch</value>
@@ -1058,7 +1058,7 @@
     <value>Reset Complete</value>
   </data>
   <data name="Notification.ResetCompleteBody" xml:space="preserve">
-    <value>Pulsar has been restored to its first-launch defaults. Saved profiles and custom configuration have been removed. A backup has been created in the user data folder.\n\nThe application needs to restart to complete the reset.</value>
+    <value>Pulsar has been restored to its first-launch defaults. Saved profiles and custom configuration have been removed. A backup has been created in the user data folder.&#10;&#10;The application needs to restart to complete the reset.</value>
   </data>
   <data name="Notification.ResetFailed" xml:space="preserve">
     <value>Reset Failed</value>
@@ -1153,8 +1153,8 @@
   <data name="Notification.UnsavedChangesBody" xml:space="preserve">
     <value>You have unsaved changes. Do you want to save before closing?</value>
   </data>
-              <data name="Notification.CleanCacheBody" xml:space="preserve">
-    <value>This will remove cached icons for processes not seen in the last 30 days (blacklisted processes are never removed).\n\nAre you sure you want to proceed?</value>
+  <data name="Notification.CleanCacheBody" xml:space="preserve">
+    <value>This will remove cached icons for processes not seen in the last 30 days (blacklisted processes are never removed).&#10;&#10;Are you sure you want to proceed?</value>
   </data>
   <data name="Notification.CacheCleaned" xml:space="preserve">
     <value>Cache Cleaned</value>
@@ -1181,37 +1181,37 @@
     <value>Installation Complete</value>
   </data>
   <data name="Notification.InstallCompleteBody" xml:space="preserve">
-    <value>Plugin has been installed successfully.\n\nPlease restart Pulsar to load the plugin.</value>
+    <value>Plugin has been installed successfully.&#10;&#10;Please restart Pulsar to load the plugin.</value>
   </data>
   <data name="Notification.InstallFailed" xml:space="preserve">
     <value>Installation Failed</value>
   </data>
   <data name="Notification.InstallFailedFormat" xml:space="preserve">
-    <value>Failed to install plugin from file:\n\n{0}</value>
+    <value>Failed to install plugin from file:&#10;&#10;{0}</value>
   </data>
   <data name="Notification.InstallError" xml:space="preserve">
     <value>Installation Error</value>
   </data>
   <data name="Notification.InstallErrorFormat" xml:space="preserve">
-    <value>An error occurred while installing the plugin:\n\n{0}</value>
+    <value>An error occurred while installing the plugin:&#10;&#10;{0}</value>
   </data>
   <data name="Notification.ConfirmUninstall" xml:space="preserve">
     <value>Confirm Uninstall</value>
   </data>
   <data name="Notification.ConfirmUninstallFormat" xml:space="preserve">
-    <value>Are you sure you want to uninstall {0}?\n\nThis will remove all plugin files.</value>
+    <value>Are you sure you want to uninstall {0}?&#10;&#10;This will remove all plugin files.</value>
   </data>
   <data name="Notification.UninstallComplete" xml:space="preserve">
     <value>Uninstall Complete</value>
   </data>
   <data name="Notification.UninstallCompleteFormat" xml:space="preserve">
-    <value>{0} has been uninstalled successfully.\n\nPlease restart Pulsar to complete the removal.</value>
+    <value>{0} has been uninstalled successfully.&#10;&#10;Please restart Pulsar to complete the removal.</value>
   </data>
   <data name="Notification.UninstallFailed" xml:space="preserve">
     <value>Uninstall Failed</value>
   </data>
   <data name="Notification.UninstallFailedFormat" xml:space="preserve">
-    <value>Failed to uninstall {0}:\n\n{1}</value>
+    <value>Failed to uninstall {0}:&#10;&#10;{1}</value>
   </data>
   <data name="Notification.SuccessfullyInstalled" xml:space="preserve">
     <value>Successfully installed plugin from file</value>

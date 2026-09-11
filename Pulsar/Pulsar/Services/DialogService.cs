@@ -52,12 +52,9 @@ namespace Pulsar.Services
                 };
                 vm.ConfigureButtons(buttons);
 
-                // Use Small for SaveDontSaveCancel (3 buttons), XSmall for simple messages
-                var sizeConstraints = buttons == DialogButtons.SaveDontSaveCancel 
-                    ? DialogSizeConstraints.Small 
-                    : DialogSizeConstraints.XSmall;
-
-                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, sizeConstraints);
+                // Message preset: height grows with content (cap 480) — long bodies
+                // scroll via the sys:String template's ScrollViewer instead of clipping.
+                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.Message);
             });
         }
 
@@ -160,7 +157,7 @@ namespace Pulsar.Services
                     SecondaryButtonText = cancelText ?? _loc["Dialog.Button.Cancel"]
                 };
 
-                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.XSmall);
+                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.Message);
             });
         }
 
@@ -303,6 +300,11 @@ namespace Pulsar.Services
             if (constraints.SizeToContent)
             {
                 window.SizeToContent = SizeToContent.WidthAndHeight;
+            }
+            else if (constraints.AutoHeight)
+            {
+                // Height grows with content (clamped by MaxHeight); width stays fixed.
+                window.SizeToContent = SizeToContent.Height;
             }
             else
             {

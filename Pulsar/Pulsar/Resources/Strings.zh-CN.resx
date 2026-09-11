@@ -1673,7 +1673,7 @@
   <data
     name="Notification.ResetConfirmBody"
     xml:space="preserve">
-    <value>这将把Pulsar恢复到首次启动状态，重新创建默认配置文件，并重新启用入门引导。\n\n重置前会创建当前配置的备份。\n确定要继续吗？</value>
+    <value>这将把Pulsar恢复到首次启动状态，重新创建默认配置文件，并重新启用入门引导。&#10;&#10;重置前会创建当前配置的备份。&#10;确定要继续吗？</value>
   </data>
   <data
     name="Notification.RestoreFirstLaunch"
@@ -1693,7 +1693,7 @@
   <data
     name="Notification.ResetCompleteBody"
     xml:space="preserve">
-    <value>Pulsar已恢复到首次启动的默认设置。已保存的配置文件和自定义配置已被移除。备份已创建在用户数据文件夹中。\n\n应用程序需要重新启动以完成重置。</value>
+    <value>Pulsar已恢复到首次启动的默认设置。已保存的配置文件和自定义配置已被移除。备份已创建在用户数据文件夹中。&#10;&#10;应用程序需要重新启动以完成重置。</value>
   </data>
   <data
     name="Notification.ResetFailed"
@@ -1853,7 +1853,7 @@
               <data
     name="Notification.CleanCacheBody"
     xml:space="preserve">
-    <value>这将移除过去30天内未出现的进程的缓存图标（黑名单进程除外）。\n\n确定要继续吗？</value>
+    <value>这将移除过去30天内未出现的进程的缓存图标（黑名单进程除外）。&#10;&#10;确定要继续吗？</value>
   </data>
   <data
     name="Notification.CacheCleaned"
@@ -1898,7 +1898,7 @@
   <data
     name="Notification.InstallCompleteBody"
     xml:space="preserve">
-    <value>插件已成功安装。\n\n请重启Pulsar以加载插件。</value>
+    <value>插件已成功安装。&#10;&#10;请重启Pulsar以加载插件。</value>
   </data>
   <data
     name="Notification.InstallFailed"
@@ -1908,7 +1908,7 @@
   <data
     name="Notification.InstallFailedFormat"
     xml:space="preserve">
-    <value>从文件安装插件失败：\n\n{0}</value>
+    <value>从文件安装插件失败：&#10;&#10;{0}</value>
   </data>
   <data
     name="Notification.InstallError"
@@ -1918,7 +1918,7 @@
   <data
     name="Notification.InstallErrorFormat"
     xml:space="preserve">
-    <value>安装插件时发生错误：\n\n{0}</value>
+    <value>安装插件时发生错误：&#10;&#10;{0}</value>
   </data>
   <data
     name="Notification.ConfirmUninstall"
@@ -1928,7 +1928,7 @@
   <data
     name="Notification.ConfirmUninstallFormat"
     xml:space="preserve">
-    <value>确定要卸载{0}吗？\n\n这将移除所有插件文件。</value>
+    <value>确定要卸载{0}吗？&#10;&#10;这将移除所有插件文件。</value>
   </data>
   <data
     name="Notification.UninstallComplete"
@@ -1938,7 +1938,7 @@
   <data
     name="Notification.UninstallCompleteFormat"
     xml:space="preserve">
-    <value>{0}已成功卸载。\n\n请重启Pulsar以完成移除。</value>
+    <value>{0}已成功卸载。&#10;&#10;请重启Pulsar以完成移除。</value>
   </data>
   <data
     name="Notification.UninstallFailed"
@@ -1948,7 +1948,7 @@
   <data
     name="Notification.UninstallFailedFormat"
     xml:space="preserve">
-    <value>卸载{0}失败：\n\n{1}</value>
+    <value>卸载{0}失败：&#10;&#10;{1}</value>
   </data>
   <data
     name="Notification.SuccessfullyInstalled"
