@@ -1731,17 +1731,6 @@ namespace Pulsar.ViewModels
 
         public void SetInvocationPointScreen(Point point) => _invocationPointScreen = point;
 
-        public bool HandlePagingKey(int direction)
-        {
-            if (!IsVisible || direction == 0)
-            {
-                return false;
-            }
-
-            int delta = direction > 0 ? -120 : 120;
-            return HandleMouseWheel(delta, treatFeedbackAsHandled: true);
-        }
-
         public bool HandleMouseWheel(int delta, bool treatFeedbackAsHandled)
         {
             if (!IsVisible || _subMenuTransition.IsTransitioning) return false;

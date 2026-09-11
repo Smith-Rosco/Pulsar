@@ -460,8 +460,6 @@ namespace Pulsar.ViewModels
 
         public void CancelActiveMenu() => _session.CancelActiveMenu();
 
-        public bool HandlePagingKey(int direction) => _session.HandlePagingKey(direction);
-
         public bool HandleMouseWheel(int delta) => _session.HandleMouseWheel(delta, treatFeedbackAsHandled: false);
 
         public event Action<BoundaryDirection>? OnPagingBoundaryFeedbackRequested

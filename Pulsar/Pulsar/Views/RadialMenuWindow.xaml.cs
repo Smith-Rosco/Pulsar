@@ -257,10 +257,6 @@ namespace Pulsar.Views
             base.OnClosed(e);
         }
 
-        // [UX 2026-09-09 U4] Arrow keys held right now — a second key turns a
-        // cardinal direction into its diagonal (Left+Up = top-left sector).
-        private readonly HashSet<Key> _heldDirectionKeys = new();
-
         private void OnPreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (!_viewModel.IsVisible)
@@ -268,94 +264,14 @@ namespace Pulsar.Views
                 return;
             }
 
-            switch (e.Key)
+            // [2026-09-11] 轮盘键盘导航已移除（用户裁定）：轮盘只在快捷键按住期间
+            // 存在，选择一律走指针路径（悬停命中 + 磁吸），键盘与指针并存会出现两套
+            // "当前目标"的来源。Esc 保留——它是取消而非导航，且与"右键/点空白/看门狗"
+            // 互为冗余。
+            if (e.Key == Key.Escape)
             {
-                case Key.Escape:
-                    _viewModel.CancelActiveMenu();
-                    e.Handled = true;
-                    break;
-
-                // [UX 2026-09-09 U4] Arrows select the nearest sector instead of
-                // paging. Paging moved to PgUp/PgDn (the mouse wheel still pages);
-                // sector selection via the same polar geometry the mouse uses
-                // keeps keyboard and mouse positions interchangeable.
-                case Key.Left:
-                case Key.Right:
-                case Key.Up:
-                case Key.Down:
-                    if (_heldDirectionKeys.Add(e.Key))
-                    {
-                        ResolveKeyboardDirection();
-                    }
-                    e.Handled = true;
-                    break;
-
-                case Key.PageUp:
-                    if (_viewModel.HandlePagingKey(-1))
-                    {
-                        e.Handled = true;
-                    }
-                    break;
-
-                case Key.PageDown:
-                    if (_viewModel.HandlePagingKey(1))
-                    {
-                        e.Handled = true;
-                    }
-                    break;
-
-                case Key.Enter:
-                    _ = _viewModel.ExecuteSelectionAsync();
-                    e.Handled = true;
-                    break;
-
-                default:
-                    int? digit = e.Key switch
-                    {
-                        Key.D1 or Key.NumPad1 => 1,
-                        Key.D2 or Key.NumPad2 => 2,
-                        Key.D3 or Key.NumPad3 => 3,
-                        Key.D4 or Key.NumPad4 => 4,
-                        Key.D5 or Key.NumPad5 => 5,
-                        Key.D6 or Key.NumPad6 => 6,
-                        Key.D7 or Key.NumPad7 => 7,
-                        Key.D8 or Key.NumPad8 => 8,
-                        Key.D9 or Key.NumPad9 => 9,
-                        _ => null
-                    };
-                    if (digit.HasValue)
-                    {
-                        var resolved = RadialKeyboardNavigator.ResolveDigitSlotIndex(
-                            digit.Value, _viewModel.Slots.Count);
-                        if (resolved.HasValue)
-                        {
-                            _viewModel.UpdateActiveSlot(resolved.Value);
-                            e.Handled = true;
-                        }
-                    }
-                    break;
-            }
-        }
-
-        private void OnPreviewKeyUp(object sender, KeyEventArgs e)
-        {
-            // Selection stays where it is when a direction key is released — only
-            // a newly PRESSED key (or a fresh diagonal combination) moves it.
-            _heldDirectionKeys.Remove(e.Key);
-        }
-
-        private void ResolveKeyboardDirection()
-        {
-            var (dirX, dirY) = RadialKeyboardNavigator.DirectionFromKeys(
-                _heldDirectionKeys.Contains(Key.Left),
-                _heldDirectionKeys.Contains(Key.Right),
-                _heldDirectionKeys.Contains(Key.Up),
-                _heldDirectionKeys.Contains(Key.Down));
-
-            int slotIndex = RadialKeyboardNavigator.ResolveSlotIndex(dirX, dirY, _viewModel.Slots.Count);
-            if (slotIndex > 0)
-            {
-                _viewModel.UpdateActiveSlot(slotIndex);
+                _viewModel.CancelActiveMenu();
+                e.Handled = true;
             }
         }
 
