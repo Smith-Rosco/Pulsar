@@ -51,7 +51,13 @@
 - [ ] **架构审查 round（2026-09-11 14:0x，9 候选）余下 8 个**：报告为 `%TEMP%\architecture-review-<ts>.html`（每轮重新生成，不持久化）——候选要点已抄录如下，无需找回报告。
   - **推荐序（2026-09-11 14:2x 用户确认）**：#2 共享参数规格 → #4 对话框目录 → #3 + #8 快赢 → #9（与 #4 同子系统，可捆绑）→ **暂缓** #6 / #7（结论需真机验收，而验收已暂缓）、#5（动的是嵌入资源结构，待决定）。
   - [x] **#1 Secret 选取器 / 暂存写入收敛到单一 owner —— 已落地（本日 14:1x，grill auto-with-guardrails + TDD）**：新增 `ISecretPickerSeam` + `SettingsSecretPickerSeam`（零状态 adapter）+ `SecretEntryProjection`（纯投影）；`SlotEditorWorkspace.PendingSecrets` 收为 `IReadOnlyDictionary` 视图 + 新增 `UnstageSecret`（`StageSecret` 从 0 生产调用点变回唯一入口）；`SettingsEditorSession.RemoveSecretAsync`（Settings 面恢复唯一写者）；`SecretPickerViewModel` 7 参 → 4 参、首次无 WPF 可测。build **0/0**，全量 **1602/1602**（基线 1585 + 17）。**真机验收待做**：secret 新增 / 编辑 / 删除 / 选取四条路径。
-  - [ ] `Strong` **#2 插件参数规格升到共享 Module**：WinSwitcher 的 canonical spec 落在 `private static`（`WinSwitcherPlugin.Metadata.cs:145/168/189/212`）→ 4 个插件共 14 块手写规格；VbaRunner `:106-124` vs Bookmarklet `:118-136` 18 字段中 13 个逐字相同；Command `arguments` vs WinSwitcher `ArgumentsParameter` 8 字段逐字同；防漂移守卫只覆盖 WinSwitcher（`BuiltInPluginMetadataTests.cs:58`）。⚠ 设计张力：`Plugins/Extensions/` 同时是 PluginTemplate 的样板来源，共享 Module 会让样板依赖内部模块。
+  - [x] `Strong` **#2 插件参数规格升到共享 Module —— 已落地（2026-09-11 14:5x，grill auto-with-guardrails）**：新增 `Core/Plugin/Metadata/SlotParameterSpecs.cs`（2 个多消费者形态工厂 `FilePathParameter` / `ArgumentsParameter` + 2 个 key 常量 `ScriptPathKey` / `ArgumentsKey`；结构字段定死，用户可见文案入参）。
+    - **WinSwitcher 私有 `ArgumentsParameter` 拆除**（原 `:212` 的 8 个字段迁入工厂）；VbaRunner / Bookmarklet 的 `scriptPath` 手写块 → `FilePathParameter`；Command 的 `arguments` → `ArgumentsParameter`（`label` / `example` 入参）。原「18 字段中 13 个逐字相同」的手抄面归零。
+    - **守卫从「只覆盖 WinSwitcher」扩到全部 6 个内建插件（Core + Extension）**：新增 4 用例 —— 每形态各 1 条 canonical 字段断言（`ScriptPathParameters_AllMatch…` / `ArgumentsParameters_AllMatch…`）+ 1 条跨插件等价断言；等价用例里的 `HaveCountGreaterThan(1)` 是「共享规格必须 ≥2 消费者」的哨兵（单消费者形态一旦出现，该模块就该解散）。Extension 插件在此首次进入 metadata 断言面（此前零覆盖）。
+    - **SecretFill 的 2 个参数块刻意不动**：`secretId`（guid + Secret picker）与 `autoEnter`（bool）各只有 1 个消费者，按模块自身规则（只收 ≥2 消费者形态）不合入。
+    - **⚠ 设计张力已裁定**：`SlotParameterSpecs` 定位为**内建便利入口、不构成稳定性契约**，外部插件自写参数元数据 —— 已写入 `PLUGIN_DEVELOPMENT.md`（新增「内建共享规格（SlotParameterSpecs）」小节）。
+    - **范围裁定 + 回退**：工作区里另有一处越界改动（`CommandPluginMetadata` 的 `MinPulsarVersion = null!` → `"1.0.0"` + 配套守卫 `EveryBuiltInPlugin_DeclaresAParsableMinPulsarVersion`）已**回退** —— 该字段生产读取点为 0（全仓 grep + 无序列化路径），为死字段加守卫方向相反；发现另记（见本清单末条）。
+    - 验证：build **0 警告 0 错误**；全量 **1606/1606**（基线 1602 + 4，精确对账），失败 0 跳过 0。术语 `CONTEXT.md` 新增 **Slot Parameter Spec**（用户 14:5x 批准）。
   - [ ] `Strong` **#3 相对时间格式化单一 owner**：3 份实现且阈值已漂移 30/30/**7** 天（`PluginAnalyticsFormatter.cs:75-83` / `PluginViewModel.cs:232-240` / `UsageStatsReadModel.cs:429-439`）；`PluginViewModel._formatter` 无条件赋值（:185）→ `:77/:119` 的手写回退右支不可达。
   - [ ] `Strong` **#4 对话框目录 Module**：19 个 VM × 19 个 Content XAML；新增一个对话框要动 ≥5 处（VM / Content / DialogTemplates / size preset / 标题 resx）；`DialogTemplates.xaml` 被 `App.xaml:22` + `DialogHostWindow.xaml:28` 两处注册；守卫只钉 1/5 触点（`DialogTemplateRegistrationTests.cs:31-53`）；旁证 `d85b17c` 修一个弹窗改了 6 文件 3 层。
   - [ ] `Worth exploring` **#5 教程步骤文本单一来源**：5 个 JSON × 6 步同时写 `title`+`titleKey` / `description`+`descriptionKey`（30 对），运行时恒取 key（`TutorialStepCard.xaml.cs:79-84`）→ 散文是死副本；`TutorialStepLoader.GetFallbackSteps()` 手抄第三份；`ApplyConventionKeys` 生产不触发且 0 测试。
@@ -60,6 +66,7 @@
   - [ ] `Worth exploring` **#8 启动顺序声明式 + 组合根守卫**：`App.xaml.cs:357/382` 重复注册 `IDialogService`、`:366/:380` 重复注册 Tutorial `StartupCoordinator`（后者覆盖前者 = 死注册）；组合根零测试；顺序不变量只写在注释（`AppStartupCoordinator.cs:164-189`）。ADR-017/018 已定的部分不重开。
   - [ ] `Worth exploring` **#9 删页面注册死元素**：`SettingsPageRegistration.PageType` 读取点 0；`SettingsPageFactory.RegisterCreator` 调用点 0；`SettingsPageFactory` 0 直接测试；新增常驻页仍需双点维护。
 - [ ] **（待用户裁定）Secret 删除语义**：当前 `Delete` 是**立即落盘、不可撤销**（本候选刻意保持行为不变）。是否改为「暂存删除 → 随会话提交 / 取消可回滚」是一个独立的行为决定。
+- [ ] **（新发现，2026-09-11，做 #2 时捡到）`PluginCapabilities.MinPulsarVersion` 只写不读**：全仓 grep 证实生产读取点 **0**（`PluginLoader.cs:426/581` 只写；唯一读者是已被回退的那条越界测试；`PluginMetadata` 无 JSON 序列化路径）。当前 `CommandPluginMetadata.cs:53` 是 6 个内建插件里唯一写 `null!` 的（其余 5 个写 `"1.0.0"`，属性默认值也是 `"1.0.0"`）。两个独立选择：① 删字段（真正的版本下限判定走 `PluginManifest.MinPulsarVersion`，`PluginLoader.cs:334` 只对**外部** manifest 判——内建插件的这个 `Capabilities` 字段纯装饰）；② 仅去掉 `null!` 那一行，让属性默认值生效（1 行）。建议并入 **#9「删页面注册面上的死元素」** 一起做「死元素清扫」，不要在别的候选里顺手改（本次已因范围纪律回退）。
 
 ## 已完成（历史保留）
 

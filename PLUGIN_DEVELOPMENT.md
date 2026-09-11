@@ -172,6 +172,14 @@ new SlotParameterMetadata
 - 如果未提供摘要文本，UI 会回退到通用状态文本，例如 `configured`、`missing`、`on`、`off`。
 - 如果第三方插件元数据不完整，插件仍然可配置，只是摘要会更保守，更多字段会落入完整配置对话框。
 
+#### 内建共享规格（SlotParameterSpecs）
+
+`Pulsar.Core.Plugin.Metadata.SlotParameterSpecs` 是**内建**插件共享 slot 参数形态的便利入口：把跨插件重复出现的形态（`scriptPath` 文件路径、`arguments` 命令行参数）的结构字段——`Type`、`Group`、`SummaryMode` 及其摘要文案、`PresentationHint`、`QuickEditPriority`、`PickerIntent`、`Validators`——在一处定死，各调用方只传用户可见文案（`Description` / `Placeholder` / `Example` / `InputHint` / `ValidationHint`，必要时 `Label` / `Example` / `Group`）。
+
+- 只有**两个及以上**消费者共享的形态才进这个模块。单消费者的形态留在声明它的插件里——共享规格只有一个消费者时，就是多了一个没有变化点的 seam。
+- 形态可随时增加、改名或删除；内建插件的等价性由 `BuiltInPluginMetadataTests` 的跨插件守卫钉死。
+- **外部插件请自写 `SlotParameterMetadata`**（见上面的完整示例）：本模块**不构成稳定性契约**，不要依赖它的存在或签名。外部插件拿不到这些便利工厂不影响任何功能——参数元数据始终是插件自己声明的。
+
 ### IPulsarPlugin (必须实现)
 
 所有插件必须实现此接口：

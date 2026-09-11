@@ -101,27 +101,12 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                         SuggestedColorHex = "#FF8C00",
                         Parameters = new List<SlotParameterMetadata>
                         {
-                            new()
-                            {
-                                Key = "scriptPath",
-                                Type = "string",
-                                Label = "Script File",
-                                Description = "Path to the VBA script file.",
-                                IsRequired = true,
-                                Group = SlotParameterGroup.Required,
-                                SummaryLabel = "Script",
-                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
-                                ConfiguredSummaryText = "file ready",
-                                MissingSummaryText = "file missing",
-                                PresentationHint = SlotParameterPresentationHint.QuickEdit,
-                                QuickEditPriority = 100,
-                                Placeholder = "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\example.txt",
-                                Example = "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\macro.bas",
-                                InputHint = "Choose a .txt, .vbs, or .bas file.",
-                                ValidationHint = "Choose a local .txt, .vbs, or .bas file.",
-                                PickerIntent = SlotPickerIntent.File,
-                                Validators = new List<ValidationRule> { new RequiredValidator() }
-                            },
+                            SlotParameterSpecs.FilePathParameter(
+                                "Path to the VBA script file.",
+                                "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\example.txt",
+                                "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\macro.bas",
+                                "Choose a .txt, .vbs, or .bas file.",
+                                "Choose a local .txt, .vbs, or .bas file."),
                             new()
                             {
                                 Key = "macro",

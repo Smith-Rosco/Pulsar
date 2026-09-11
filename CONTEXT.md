@@ -110,6 +110,10 @@ _Avoid_: Context, window state, environment
 A stack-scoped per-execution scope carrying correlation data (plugin ID, Action, execution ID). Distinct from PulsarContext, which never holds per-execution data.
 _Avoid_: Context
 
+**Slot Parameter Spec**:
+A slot-parameter shape whose structural fields are decided once in `Core/Plugin/Metadata/SlotParameterSpecs.cs` for every plugin that declares it: `Type`, `Group`, `SummaryMode` with its configured/missing summary texts, `PresentationHint`, `QuickEditPriority`, `PickerIntent`, and validators. Only the prose a user reads (Description, Placeholder, Example, InputHint, ValidationHint) is passed in per plugin. A shape is promoted here only once two or more plugins declare it — a shared spec with one consumer would be a seam nothing varies across, so single-consumer shapes stay private to their plugin.
+_Avoid_: parameter template, shared parameter metadata, "keep the copies in sync" (the copies are what this replaces — they drifted precisely because nothing compared them)
+
 ### Statistics
 
 **Usage Stats Read Model**:

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -8,7 +10,9 @@ using Pulsar.Plugins.Core.SecretFill;
 using Pulsar.Plugins.Core.SecretFill.Contracts;
 using Pulsar.Plugins.Core.SystemCommand;
 using Pulsar.Plugins.Core.WinSwitcher;
+using Pulsar.Plugins.Extensions.BookmarkletRunner;
 using Pulsar.Plugins.Extensions.Command;
+using Pulsar.Plugins.Extensions.VbaRunner;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Tests.Plugins.Core
@@ -202,6 +206,134 @@ namespace Pulsar.Tests.Plugins.Core
 
             metadata.Display.Name.Should().Be("Pulsar Settings");
             metadata.Actions.Keys.Should().Equal("open-settings", "quick-add-profile");
+        }
+
+        // ============ Cross-plugin contract guards ============
+        //
+        // [Architecture review 2026-09-11, candidate #2] The parameter specs of every
+        // built-in plugin — Core AND Extension — are held to the shared canonical shapes.
+        // Before this the guard only covered WinSwitcher, so the Extension plugins could
+        // drift unobserved.
+        //
+        // Scope note: the guards below cover the shapes SlotParameterSpecs actually owns
+        // (the multi-consumer ones). Single-consumer shapes stay asserted by the plugin
+        // that declares them; a guard over one consumer would guard nothing.
+
+        [Fact]
+        public void ScriptPathParameters_AllMatchTheCanonicalFilePathSpec()
+        {
+            var specs = AllParameters().Where(p => p.Key == SlotParameterSpecs.ScriptPathKey).ToList();
+
+            specs.Should().NotBeEmpty("the shared file-path shape must still be in use");
+
+            foreach (var spec in specs)
+            {
+                spec.Type.Should().Be("string");
+                spec.IsRequired.Should().BeTrue();
+                spec.Group.Should().Be(SlotParameterGroup.Required);
+                spec.SummaryLabel.Should().Be("Script");
+                spec.SummaryMode.Should().Be(SlotParameterSummaryMode.SafeStateOnly);
+                spec.ConfiguredSummaryText.Should().Be("file ready");
+                spec.MissingSummaryText.Should().Be("file missing");
+                spec.PresentationHint.Should().Be(SlotParameterPresentationHint.QuickEdit);
+                spec.QuickEditPriority.Should().Be(100);
+                spec.PickerIntent.Should().Be(SlotPickerIntent.File);
+                spec.Validators.Should().ContainSingle().Which.Should().BeOfType<RequiredValidator>();
+            }
+        }
+
+        [Fact]
+        public void ScriptPathParameters_ShareTheirStructuralFieldsAcrossPlugins()
+        {
+            var specs = AllParameters().Where(p => p.Key == SlotParameterSpecs.ScriptPathKey).ToList();
+
+            specs.Should().HaveCountGreaterThan(1, "this guard only earns its keep with two or more consumers");
+
+            foreach (var other in specs.Skip(1))
+            {
+                other.Should().BeEquivalentTo(specs[0], options => options
+                        .Excluding(p => p.Description)
+                        .Excluding(p => p.Placeholder)
+                        .Excluding(p => p.Example)
+                        .Excluding(p => p.InputHint)
+                        .Excluding(p => p.ValidationHint),
+                    "the file-path shape is structural — only the prose may differ per plugin");
+            }
+        }
+
+        [Fact]
+        public void ArgumentsParameters_AllMatchTheCanonicalArgumentsSpec()
+        {
+            var specs = AllParameters().Where(p => p.Key == SlotParameterSpecs.ArgumentsKey).ToList();
+
+            specs.Should().NotBeEmpty("the shared arguments shape must still be in use");
+
+            foreach (var spec in specs)
+            {
+                spec.Type.Should().Be("string");
+                spec.IsRequired.Should().BeFalse();
+                spec.SummaryLabel.Should().Be("Args");
+                spec.SummaryMode.Should().Be(SlotParameterSummaryMode.SafeStateOnly);
+                spec.ConfiguredSummaryText.Should().Be("args set");
+                spec.MissingSummaryText.Should().Be("no args");
+                spec.PresentationHint.Should().Be(SlotParameterPresentationHint.DialogOnly);
+                spec.Validators.Should().BeEmpty();
+            }
+        }
+
+        [Fact]
+        public void ArgumentsParameters_ShareTheirStructuralFieldsAcrossPlugins()
+        {
+            var specs = AllParameters().Where(p => p.Key == SlotParameterSpecs.ArgumentsKey).ToList();
+
+            specs.Should().HaveCountGreaterThan(1, "this guard only earns its keep with two or more consumers");
+
+            foreach (var other in specs.Skip(1))
+            {
+                other.Should().BeEquivalentTo(specs[0], options => options
+                        .Excluding(p => p.Label)
+                        .Excluding(p => p.Description)
+                        .Excluding(p => p.Group)
+                        .Excluding(p => p.Placeholder)
+                        .Excluding(p => p.Example)
+                        .Excluding(p => p.InputHint)
+                        .Excluding(p => p.ValidationHint),
+                    "the arguments shape is structural — only the prose and group may differ per action");
+            }
+        }
+
+        /// <summary>
+        /// Every parameter declared by any built-in plugin, across every Action.
+        /// </summary>
+        private static IEnumerable<SlotParameterMetadata> AllParameters() =>
+            AllBuiltInMetadata()
+                .SelectMany(metadata => metadata.Actions.Values)
+                .SelectMany(action => action.Parameters);
+
+        /// <summary>
+        /// Every built-in plugin, Core and Extension alike. Extension plugins are built here
+        /// with mocked seams because they have no parameterless constructor.
+        /// </summary>
+        private static IEnumerable<PluginMetadata> AllBuiltInMetadata()
+        {
+            var loc = new Mock<ILocalizationService>();
+            loc.Setup(l => l[It.IsAny<string>()]).Returns((string key) => key);
+
+            yield return new WinSwitcherPlugin().GetMetadata();
+            yield return new SystemCommandPlugin().GetMetadata();
+            yield return new SecretFillPlugin(
+                NullLogger<SecretFillPlugin>.Instance,
+                loc.Object,
+                new Mock<ISecretFillExecutionService>().Object).GetMetadata();
+            yield return new VbaRunnerPlugin().GetMetadata();
+            yield return new BookmarkletRunnerPlugin().GetMetadata();
+            yield return new CommandPlugin(
+                NullLogger<CommandPlugin>.Instance,
+                new Mock<IKeySender>().Object,
+                new Mock<IProcessLauncher>().Object,
+                loc.Object,
+                new Mock<IWindowService>().Object,
+                new Mock<IFocusManager>().Object).GetMetadata();
         }
     }
 }

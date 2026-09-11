@@ -85,22 +85,12 @@ namespace Pulsar.Plugins.Extensions.Command
                                 PickerIntent = SlotPickerIntent.Process,
                                 Validators = new List<ValidationRule> { new RequiredValidator() }
                             },
-                            new()
-                            {
-                                Key = "arguments",
-                                Type = "string",
-                                Label = "Arguments",
-                                Description = "Optional command-line arguments.",
-                                IsRequired = false,
-                                Group = SlotParameterGroup.Optional,
-                                SummaryLabel = "Args",
-                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
-                                ConfiguredSummaryText = "args set",
-                                MissingSummaryText = "no args",
-                                PresentationHint = SlotParameterPresentationHint.DialogOnly,
-                                Placeholder = "/k echo Hello",
-                                Example = "/c start https://example.com"
-                            },
+                            SlotParameterSpecs.ArgumentsParameter(
+                                SlotParameterGroup.Optional,
+                                "Optional command-line arguments.",
+                                "/k echo Hello",
+                                label: "Arguments",
+                                example: "/c start https://example.com"),
                             new()
                             {
                                 Key = "workingDir",

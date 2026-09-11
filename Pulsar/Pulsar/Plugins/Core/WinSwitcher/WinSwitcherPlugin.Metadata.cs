@@ -7,8 +7,10 @@ using Pulsar.Core.Plugin.Metadata;
 
 namespace Pulsar.Plugins.Core.WinSwitcher
 {
-    // [W3] Slot parameter specs are defined exactly once here (app / path / arguments variants);
+    // [W3] The app / fallback-path / executable-path specs are defined exactly once here;
     // the three action metadata blocks compose them via named factories so the copies cannot drift.
+    // [Architecture review 2026-09-11, candidate #2] The "arguments" spec is shared with other
+    // plugins, so it now lives in SlotParameterSpecs instead of here.
     // Localization note: parameter/action Labels resolve via the SlotParam.* / SlotAction.* resx
     // convention — do not reword a Label without checking Resources/Strings*.resx key coverage.
     public partial class WinSwitcherPlugin
@@ -101,11 +103,11 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             {
                 AppParameter(),
                 FallbackPathParameter(),
-                ArgumentsParameter(
+                SlotParameterSpecs.ArgumentsParameter(
                     SlotParameterGroup.Advanced,
                     "Optional command-line arguments passed when launching the app.",
                     "--profile-directory=Default",
-                    "Applied only when a new process is launched.")
+                    hint: "Applied only when a new process is launched.")
             }
         };
 
@@ -120,7 +122,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             Parameters = new List<SlotParameterMetadata>
             {
                 ExecutablePathParameter(),
-                ArgumentsParameter(
+                SlotParameterSpecs.ArgumentsParameter(
                     SlotParameterGroup.Optional,
                     "Optional command-line arguments passed to the target application.",
                     "--incognito")
@@ -206,30 +208,6 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             ValidationHint = "Pick an executable, shortcut, or script to launch.",
             PickerIntent = SlotPickerIntent.Process,
             Validators = new List<ValidationRule> { new RequiredValidator() }
-        };
-
-        // Shared "arguments" spec; group/description/placeholder/hints vary per action.
-        private static SlotParameterMetadata ArgumentsParameter(
-            SlotParameterGroup group,
-            string description,
-            string placeholder,
-            string? launchHint = null) => new()
-        {
-            Key = "arguments",
-            Type = "string",
-            Label = "Launch Arguments",
-            Description = description,
-            IsRequired = false,
-            Group = group,
-            SummaryLabel = "Args",
-            SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
-            ConfiguredSummaryText = "args set",
-            MissingSummaryText = "no args",
-            PresentationHint = SlotParameterPresentationHint.DialogOnly,
-            Placeholder = placeholder,
-            Example = "--new-window https://example.com",
-            InputHint = launchHint,
-            ValidationHint = launchHint
         };
     }
 }

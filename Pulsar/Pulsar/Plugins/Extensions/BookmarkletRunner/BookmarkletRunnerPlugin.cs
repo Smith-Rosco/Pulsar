@@ -113,27 +113,12 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                         SuggestedColorHex = "#FF6B6B",
                         Parameters = new List<SlotParameterMetadata>
                         {
-                            new()
-                            {
-                                Key = "scriptPath",
-                                Type = "string",
-                                Label = "Script File",
-                                Description = "Path to the JavaScript file that contains the bookmarklet.",
-                                IsRequired = true,
-                                Group = SlotParameterGroup.Required,
-                                SummaryLabel = "Script",
-                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
-                                ConfiguredSummaryText = "file ready",
-                                MissingSummaryText = "file missing",
-                                PresentationHint = SlotParameterPresentationHint.QuickEdit,
-                                QuickEditPriority = 100,
-                                Placeholder = "%APPDATA%\\Pulsar\\Scripts\\example.js",
-                                Example = "%APPDATA%\\Pulsar\\Scripts\\bookmarklet.js",
-                                InputHint = "Choose a .js or supported text file.",
-                                ValidationHint = "Choose a local .js or text file that contains the bookmarklet.",
-                                PickerIntent = SlotPickerIntent.File,
-                                Validators = new List<ValidationRule> { new RequiredValidator() }
-                            }
+                            SlotParameterSpecs.FilePathParameter(
+                                "Path to the JavaScript file that contains the bookmarklet.",
+                                "%APPDATA%\\Pulsar\\Scripts\\example.js",
+                                "%APPDATA%\\Pulsar\\Scripts\\bookmarklet.js",
+                                "Choose a .js or supported text file.",
+                                "Choose a local .js or text file that contains the bookmarklet.")
                         }
                     }
                 }
