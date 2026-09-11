@@ -135,11 +135,16 @@ namespace Pulsar.ViewModels.Settings
         public bool CanAddSecrets => CurrentContext?.Key != "Launcher";
 
         /// <summary>
-        /// The live staging dictionary of secrets created/edited in this editor
-        /// session but not yet persisted. The secret picker dialog mutates it in
-        /// place; callers must not replace the reference.
+        /// Read-only view of the secrets created/edited in this editor session but not yet
+        /// persisted.
+        ///
+        /// [Architecture review 2026-09-11, candidate #1] This used to be a mutable
+        /// <see cref="Dictionary{TKey,TValue}"/> handed out for in-place writes, which made
+        /// every caller re-implement "stage + mark dirty" and left <see cref="StageSecret"/>
+        /// with zero production callers. Staging is mutated only through
+        /// <see cref="StageSecret"/> / <see cref="UnstageSecret"/>.
         /// </summary>
-        public Dictionary<Guid, SecretPayload> PendingSecrets => _pendingSecrets;
+        public IReadOnlyDictionary<Guid, SecretPayload> PendingSecrets => _pendingSecrets;
 
         public IReadOnlyDictionary<Guid, SecretPayload> PersistedSecrets => _persistedSecrets;
 
@@ -726,6 +731,18 @@ namespace Pulsar.ViewModels.Settings
         {
             _pendingSecrets[secretId] = payload;
             MarkDirty();
+        }
+
+        /// <summary>
+        /// Drops a staged secret. Marks the editor dirty when something was actually
+        /// dropped, so an Unstage that changes nothing cannot fake an edit.
+        /// </summary>
+        public void UnstageSecret(Guid secretId)
+        {
+            if (_pendingSecrets.Remove(secretId))
+            {
+                MarkDirty();
+            }
         }
 
         public void ReplacePersistedSecrets(IReadOnlyDictionary<Guid, SecretPayload> allSecrets)

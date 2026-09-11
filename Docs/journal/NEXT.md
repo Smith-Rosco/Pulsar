@@ -48,5 +48,17 @@
 - [ ] **消息对话框修复真机验收（2026-09-11 落地）**：① 重置配置确认框 / 插件安装失败框 / 清理缓存确认框——正文应换行分段显示（无 `\n`/`/n` 字样）、窗口高度随内容增长（超 480 出滚动条而非裁切）；② 短消息弹窗不再偏高（自适应收缩）；③ 3 键弹窗（保存/不保存/取消）在 420 宽下按钮排布正常。build 0/0、全量 **1585/1585**（上基线 1581 + 4 守卫测试）。未 commit（用户处理）。
 - [ ] **（可选）openspec change 与 spec 条目**：本次是新增用户可见能力（视口定位策略），按仓库惯例（`gesture-isolation-filter` / `flick-out-cancel` 等均有 spec + archive change）本应走 `/opsx-propose`。本次直接实现未建 change —— 待用户决定是否补建提案，以及是否在 `openspec/specs/radial-menu/spec.md`（或新建 viewport 类 spec）登记「贴边校正 SHALL 可配置」需求。
 
+- [ ] **架构审查 round（2026-09-11 14:0x，9 候选）余下 8 个**：报告为 `%TEMP%\architecture-review-<ts>.html`（每轮重新生成，不持久化）——候选要点已抄录如下，无需找回报告。
+  - [x] **#1 Secret 选取器 / 暂存写入收敛到单一 owner —— 已落地（本日 14:1x，grill auto-with-guardrails + TDD）**：新增 `ISecretPickerSeam` + `SettingsSecretPickerSeam`（零状态 adapter）+ `SecretEntryProjection`（纯投影）；`SlotEditorWorkspace.PendingSecrets` 收为 `IReadOnlyDictionary` 视图 + 新增 `UnstageSecret`（`StageSecret` 从 0 生产调用点变回唯一入口）；`SettingsEditorSession.RemoveSecretAsync`（Settings 面恢复唯一写者）；`SecretPickerViewModel` 7 参 → 4 参、首次无 WPF 可测。build **0/0**，全量 **1602/1602**（基线 1585 + 17）。**真机验收待做**：secret 新增 / 编辑 / 删除 / 选取四条路径。
+  - [ ] `Strong` **#2 插件参数规格升到共享 Module**：WinSwitcher 的 canonical spec 落在 `private static`（`WinSwitcherPlugin.Metadata.cs:145/168/189/212`）→ 4 个插件共 14 块手写规格；VbaRunner `:106-124` vs Bookmarklet `:118-136` 18 字段中 13 个逐字相同；Command `arguments` vs WinSwitcher `ArgumentsParameter` 8 字段逐字同；防漂移守卫只覆盖 WinSwitcher（`BuiltInPluginMetadataTests.cs:58`）。⚠ 设计张力：`Plugins/Extensions/` 同时是 PluginTemplate 的样板来源，共享 Module 会让样板依赖内部模块。
+  - [ ] `Strong` **#3 相对时间格式化单一 owner**：3 份实现且阈值已漂移 30/30/**7** 天（`PluginAnalyticsFormatter.cs:75-83` / `PluginViewModel.cs:232-240` / `UsageStatsReadModel.cs:429-439`）；`PluginViewModel._formatter` 无条件赋值（:185）→ `:77/:119` 的手写回退右支不可达。
+  - [ ] `Strong` **#4 对话框目录 Module**：19 个 VM × 19 个 Content XAML；新增一个对话框要动 ≥5 处（VM / Content / DialogTemplates / size preset / 标题 resx）；`DialogTemplates.xaml` 被 `App.xaml:22` + `DialogHostWindow.xaml:28` 两处注册；守卫只钉 1/5 触点（`DialogTemplateRegistrationTests.cs:31-53`）；旁证 `d85b17c` 修一个弹窗改了 6 文件 3 层。
+  - [ ] `Worth exploring` **#5 教程步骤文本单一来源**：5 个 JSON × 6 步同时写 `title`+`titleKey` / `description`+`descriptionKey`（30 对），运行时恒取 key（`TutorialStepCard.xaml.cs:79-84`）→ 散文是死副本；`TutorialStepLoader.GetFallbackSteps()` 手抄第三份；`ApplyConventionKeys` 生产不触发且 0 测试。
+  - [ ] `Worth exploring` **#6 orb pose 决策抽出视觉树**：`SlotOrb.xaml.cs` 559 行 15 成员，8 个直操 Storyboard / 元素树，hover 目标值 1.15/1.0/0.8 硬编码；仅 `ParallaxMotionTests` 引用该类；先例 `SubMenuTransitionController.SlotPose` / `ParallaxMotion`。⚠ 纯决策可单测，最终手感仍需真机验收。
+  - [ ] `Worth exploring` **#7 导航 / 页面回收决策搬出 SettingsWindow code-behind**：825 行、`new SettingsWindow(` 全仓 0 → 行为不可测；`:782` service locator；`:74-77` 注入接口却具体类型下传（隐式「先 Attach 再导航」顺序约束）。
+  - [ ] `Worth exploring` **#8 启动顺序声明式 + 组合根守卫**：`App.xaml.cs:357/382` 重复注册 `IDialogService`、`:366/:380` 重复注册 Tutorial `StartupCoordinator`（后者覆盖前者 = 死注册）；组合根零测试；顺序不变量只写在注释（`AppStartupCoordinator.cs:164-189`）。ADR-017/018 已定的部分不重开。
+  - [ ] `Worth exploring` **#9 删页面注册死元素**：`SettingsPageRegistration.PageType` 读取点 0；`SettingsPageFactory.RegisterCreator` 调用点 0；`SettingsPageFactory` 0 直接测试；新增常驻页仍需双点维护。
+- [ ] **（待用户裁定）Secret 删除语义**：当前 `Delete` 是**立即落盘、不可撤销**（本候选刻意保持行为不变）。是否改为「暂存删除 → 随会话提交 / 取消可回滚」是一个独立的行为决定。
+
 ## 已完成（历史保留）
 

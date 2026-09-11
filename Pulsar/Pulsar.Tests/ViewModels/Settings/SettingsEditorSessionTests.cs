@@ -240,6 +240,41 @@ namespace Pulsar.Tests.ViewModels.Settings
             reloaded.Settings.Language.Should().Be("zh-CN");
         }
 
+        // ============ Secret removal ============
+        //
+        // [Architecture review 2026-09-11, candidate #1] The secret picker used to hold
+        // ISecretStore itself just to express a deletion. Removal now lives on the
+        // persistence owner, so the Settings surface has exactly one writer again.
+
+        [Fact]
+        public async Task RemoveSecretAsync_RemovesThePersistedSecret()
+        {
+            var session = CreateSession(out _, out var secrets);
+            var keep = Guid.NewGuid();
+            var drop = Guid.NewGuid();
+            secrets[keep] = new SecretPayload { Label = "Keep" };
+            secrets[drop] = new SecretPayload { Label = "Drop" };
+
+            var removed = await session.RemoveSecretAsync(drop);
+
+            removed.Should().BeTrue();
+            secrets.Should().ContainKey(keep);
+            secrets.Should().NotContainKey(drop);
+        }
+
+        [Fact]
+        public async Task RemoveSecretAsync_UnknownId_ReturnsFalse_AndLeavesTheStoreIntact()
+        {
+            var session = CreateSession(out _, out var secrets);
+            var secretId = Guid.NewGuid();
+            secrets[secretId] = new SecretPayload { Label = "GitHub" };
+
+            var removed = await session.RemoveSecretAsync(Guid.NewGuid());
+
+            removed.Should().BeFalse();
+            secrets.Should().ContainKey(secretId);
+        }
+
         // ============ Harness ============
 
         private SettingsEditorSession CreateSession(out List<int> dirtyCalls)

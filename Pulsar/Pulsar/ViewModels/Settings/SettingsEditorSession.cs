@@ -223,6 +223,26 @@ namespace Pulsar.ViewModels.Settings
         }
 
         /// <summary>
+        /// Removes one secret from the persisted store, immediately. Returns false (and
+        /// writes nothing) when the id was not persisted.
+        ///
+        /// [Architecture review 2026-09-11, candidate #1] Added so the secret picker no
+        /// longer has to hold <c>ISecretStore</c> just to express a deletion. This module
+        /// stays the only writer of the secret store on the Settings surface.
+        /// </summary>
+        public async Task<bool> RemoveSecretAsync(Guid secretId)
+        {
+            var allSecrets = await _secretStore.LoadAsync();
+            if (!allSecrets.Remove(secretId))
+            {
+                return false;
+            }
+
+            await _secretStore.SaveAsync(allSecrets);
+            return true;
+        }
+
+        /// <summary>
         /// Runs a one-shot mutation against a short-lived edit session and commits it.
         /// Used by flows that must not share the editor's long-lived session (e.g.
         /// resetting the tutorial, which changes global slots the editor may be editing).

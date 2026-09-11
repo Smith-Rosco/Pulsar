@@ -189,6 +189,66 @@ namespace Pulsar.Tests.ViewModels
         }
 
         [Fact]
+        public void StageSecret_MarksTheEditorDirty()
+        {
+            var workspace = CreateWorkspace();
+            workspace.Load(CreateConfig(), new Dictionary<Guid, SecretPayload>());
+
+            workspace.StageSecret(Guid.NewGuid(), new SecretPayload { Label = "Mail" });
+
+            workspace.HasUnsavedChanges.Should().BeTrue("staging a secret is a user edit");
+        }
+
+        [Fact]
+        public void UnstageSecret_DropsTheStagedPayload_AndMarksTheEditorDirty()
+        {
+            var workspace = CreateWorkspace();
+            workspace.Load(CreateConfig(), new Dictionary<Guid, SecretPayload>());
+
+            var id = Guid.NewGuid();
+            workspace.StageSecret(id, new SecretPayload { Label = "Mail" });
+            workspace.ResetDirty();
+
+            workspace.UnstageSecret(id);
+
+            workspace.PendingSecrets.Should().NotContainKey(id);
+            workspace.HasUnsavedChanges.Should().BeTrue("dropping a staged secret is a user edit");
+        }
+
+        [Fact]
+        public void PendingSecretsView_SeesOnlyStagedPayloads()
+        {
+            var workspace = CreateWorkspace();
+            var persistedId = Guid.NewGuid();
+            workspace.Load(CreateConfig(), new Dictionary<Guid, SecretPayload>
+            {
+                [persistedId] = new SecretPayload { Label = "Persisted" }
+            });
+
+            var stagedId = Guid.NewGuid();
+            workspace.StageSecret(stagedId, new SecretPayload { Label = "Mail" });
+
+            workspace.PendingSecrets[stagedId].Label.Should().Be("Mail");
+            workspace.PendingSecrets.Should().NotContainKey(persistedId, "persisted secrets are not staging state");
+        }
+
+        [Fact]
+        public void PendingSecrets_SurfaceIsReadOnly()
+        {
+            // [Architecture review 2026-09-11, candidate #1] The live staging dictionary
+            // used to be handed out as a mutable Dictionary, so every caller re-implemented
+            // "stage + mark dirty". It is a read-only view now; mutation goes through
+            // StageSecret / UnstageSecret.
+            var property = typeof(SlotEditorWorkspace).GetProperty(nameof(SlotEditorWorkspace.PendingSecrets));
+
+            property.Should().NotBeNull();
+            property!.PropertyType.Should().BeAssignableTo<IReadOnlyDictionary<Guid, SecretPayload>>();
+            property.PropertyType.Should().NotBe(
+                typeof(Dictionary<Guid, SecretPayload>),
+                "the staging dictionary must not be exposed for in-place mutation");
+        }
+
+        [Fact]
         public void ReplacePersistedSecrets_ClearsPending()
         {
             var workspace = CreateWorkspace();

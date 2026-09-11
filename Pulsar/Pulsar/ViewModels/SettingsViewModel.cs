@@ -45,9 +45,7 @@ namespace Pulsar.ViewModels
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly IProcessRegistryService? _processRegistryService;
         private readonly Services.Interfaces.ICustomIconStore? _customIconStore;
-        private readonly ISecretStore _secretStore;
         private readonly ISecretProtector _secretProtector;
-        private readonly ISecretFillMetadataResolver _secretMetadataResolver;
         private readonly IPluginMetadataRegistry _pluginMetadataRegistry;
         private readonly SettingsShellViewModel _settingsShell;
         private readonly ILogger<SettingsViewModel> _logger;
@@ -56,6 +54,7 @@ namespace Pulsar.ViewModels
         private readonly ILoggingConfigService _loggingConfigService;
         private readonly SlotEditorWorkspace _slotEditor;
         private readonly SettingsEditorSession _session;
+        private readonly ISecretPickerSeam _secretPickerSeam;
         private readonly ITransientPageService? _transientPages;
         private readonly SettingsEntityPageStore? _entityPages;
         private readonly ProfilesConfig _fallbackConfig = new();
@@ -224,9 +223,7 @@ namespace Pulsar.ViewModels
             // [Architecture review 2026-09-04, candidate M] Stateless recipe owner; no DI change.
             _dialogFlows = new SettingsDialogFlows(dialogService);
             _searchService = searchService;
-            _secretStore = secretStore;
             _secretProtector = secretProtector;
-            _secretMetadataResolver = secretMetadataResolver;
             _pluginMetadataRegistry = pluginMetadataRegistry;
             _settingsShell = settingsShell;
             _logger = logger;
@@ -250,6 +247,10 @@ namespace Pulsar.ViewModels
                 _session.SyncSlots,
                 smartDefaults: smartDefaults ?? new SmartSubActionDefaults());
             _slotEditor.PropertyChanged += OnSlotEditorPropertyChanged;
+
+            // [Architecture review 2026-09-11, candidate #1] The secret picker talks to this
+            // seam instead of holding the secret store and the workspace's staging dictionary.
+            _secretPickerSeam = new SettingsSecretPickerSeam(_slotEditor, _session, secretMetadataResolver);
 
             _cacheStatistics = _loc["Settings.General.CacheLoading"];
             _settingsShell.PropertyChanged += OnSettingsShellPropertyChanged;
@@ -434,7 +435,7 @@ namespace Pulsar.ViewModels
                     Account = vm2.Account,
                     EncryptedData = vm2.ResultEncryptedData
                 };
-                _slotEditor.PendingSecrets[secretId] = payload;
+                _slotEditor.StageSecret(secretId, payload);
 
                 var newItem = new PluginSlot
                 {
@@ -722,7 +723,7 @@ namespace Pulsar.ViewModels
 
                 payload.Account = vm2.Account;
                 payload.EncryptedData = vm2.ResultEncryptedData;
-                _slotEditor.PendingSecrets[secretId] = payload;
+                _slotEditor.StageSecret(secretId, payload);
 
                 _slotEditor.RefreshSlotParameterMetadata();
                 MarkDirty(); // [Phase 2]
@@ -738,9 +739,7 @@ namespace Pulsar.ViewModels
         {
             if (slot == null || !PluginIds.IsSecretFill(slot.PluginId)) return;
 
-            var labelMap = _slotEditor.BuildLegacySecretLabelMap();
-
-            var pickerVm = new SecretPickerViewModel(_secretStore, _secretProtector, _secretMetadataResolver, _loc, _slotEditor.PendingSecrets, labelMap, _dialogService);
+            var pickerVm = new SecretPickerViewModel(_secretPickerSeam, _secretProtector, _loc, _dialogService);
             await pickerVm.LoadAsync();
 
             // [Architecture review 2026-09-04, candidate M] Kept direct: post-dialog logic keys

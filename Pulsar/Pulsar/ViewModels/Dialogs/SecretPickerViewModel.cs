@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Localization;
-using Pulsar.Helpers;
 using Pulsar.Plugins.Core.SecretFill.Contracts;
 using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Services.Interfaces;
@@ -22,14 +20,22 @@ namespace Pulsar.ViewModels.Dialogs
         public string Account { get; init; } = string.Empty;
     }
 
+    /// <summary>
+    /// The secret picker dialog. It renders a list of Secrets and reports the user's
+    /// intent — create, edit, delete, select — through a single seam
+    /// (<see cref="ISecretPickerSeam"/>).
+    ///
+    /// [Architecture review 2026-09-11, candidate #1] This view model used to hold the
+    /// secret store, the metadata resolver and two live dictionaries (the workspace's
+    /// staging dictionary and a legacy label map it wrote to for no observable effect).
+    /// It now owns no storage knowledge at all, which is what makes it testable without
+    /// a real store — and it can no longer become a second writer of the secret store.
+    /// </summary>
     public partial class SecretPickerViewModel : ObservableObject, IDialogViewModel
     {
         private readonly ILocalizationService _loc;
-        private readonly ISecretStore _secretStore;
+        private readonly ISecretPickerSeam _seam;
         private readonly ISecretProtector _secretProtector;
-        private readonly ISecretFillMetadataResolver _metadataResolver;
-        private readonly Dictionary<Guid, SecretPayload> _pendingSecrets;
-        private readonly Dictionary<Guid, string> _labelMap;
         private readonly IDialogService? _dialogService;
 
         [ObservableProperty]
@@ -59,22 +65,15 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<DialogResult>? RequestClose { get; set; }
 
-        /// <param name="labelMap">Map of secretId -> legacy slot label for secrets created before labels were stored.</param>
         public SecretPickerViewModel(
-            ISecretStore secretStore,
+            ISecretPickerSeam seam,
             ISecretProtector secretProtector,
-            ISecretFillMetadataResolver metadataResolver,
             ILocalizationService localizationService,
-            Dictionary<Guid, SecretPayload> pendingSecrets,
-            Dictionary<Guid, string> labelMap,
             IDialogService? dialogService = null)
         {
-            _secretStore = secretStore;
+            _seam = seam;
             _secretProtector = secretProtector;
-            _metadataResolver = metadataResolver;
             _loc = localizationService;
-            _pendingSecrets = pendingSecrets;
-            _labelMap = labelMap;
             _dialogService = dialogService;
         }
 
@@ -83,22 +82,7 @@ namespace Pulsar.ViewModels.Dialogs
             IsLoading = true;
             try
             {
-                var saved = await _secretStore.LoadAsync();
-                var merged = _metadataResolver.Merge(saved, _pendingSecrets);
-
-                Secrets = new ObservableCollection<SecretEntry>(
-                    merged.Select(kv =>
-                    {
-                        var display = _metadataResolver.Resolve(kv.Key, saved, _pendingSecrets, _labelMap);
-
-                        return new SecretEntry
-                        {
-                            Id = kv.Key,
-                            Label = display?.Label ?? kv.Key.ToString(),
-                            Account = display?.Account ?? string.Empty
-                        };
-                    })
-                    .OrderBy(e => e.Label));
+                Secrets = new ObservableCollection<SecretEntry>(await _seam.LoadEntriesAsync());
             }
             finally
             {
@@ -136,15 +120,14 @@ namespace Pulsar.ViewModels.Dialogs
             if (addResult == DialogResult.Confirmed)
             {
                 var secretId = Guid.NewGuid();
-                var payload = new Plugins.Core.SecretFill.Models.SecretPayload
+                var payload = new SecretPayload
                 {
                     Label = vm.Label,
                     Account = vm.Account,
                     EncryptedData = vm.ResultEncryptedData
                 };
 
-                _pendingSecrets[secretId] = payload;
-                _labelMap[secretId] = vm.Label;
+                _seam.Stage(secretId, payload);
 
                 await LoadAsync();
 
@@ -157,16 +140,8 @@ namespace Pulsar.ViewModels.Dialogs
         {
             if (entry == null || _dialogService == null) return;
 
-            // Load payload (pending first, then saved)
-            SecretPayload? payload = null;
-            if (_pendingSecrets.TryGetValue(entry.Id, out var pending))
-                payload = pending;
-            else
-            {
-                var saved = await _secretStore.LoadAsync();
-                saved.TryGetValue(entry.Id, out payload);
-            }
-
+            // Staged copy first, persisted second — the seam owns that precedence.
+            var payload = await _seam.GetPayloadAsync(entry.Id);
             if (payload == null) return;
 
             var vm = new QuickSecretsViewModel(_secretProtector);
@@ -180,10 +155,7 @@ namespace Pulsar.ViewModels.Dialogs
                 payload.Label = vm.Label;
                 payload.Account = vm.Account;
                 payload.EncryptedData = vm.ResultEncryptedData;
-                _pendingSecrets[entry.Id] = payload;
-
-                // Update labelMap so the refreshed list shows the new label
-                _labelMap[entry.Id] = vm.Label;
+                _seam.Stage(entry.Id, payload);
 
                 // Refresh list
                 await LoadAsync();
@@ -203,13 +175,10 @@ namespace Pulsar.ViewModels.Dialogs
 
             if (result != DialogResult.Confirmed) return;
 
-            // Remove from pending
-            _pendingSecrets.Remove(entry.Id);
-
-            // Remove from persisted store
-            var saved = await _secretStore.LoadAsync();
-            if (saved.Remove(entry.Id))
-                await _secretStore.SaveAsync(saved);
+            // Drop the staged copy first, then the persisted one. The seam decides where
+            // each lands; the dialog never touches a store.
+            _seam.Unstage(entry.Id);
+            await _seam.RemovePersistedAsync(entry.Id);
 
             // Refresh list
             await LoadAsync();
