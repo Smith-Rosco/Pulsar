@@ -386,7 +386,8 @@ namespace Pulsar.ViewModels
         {
             // [unify-slot-editor-transient-pages 3.2 / P3 4.1] 新建入口：每上下文单例
             // 草稿 tab（slot-editor:<contextKey>:draft）。重复触发"新建"激活既有草稿
-            // tab（继续上次的草稿）；提交后转实体编辑 tab（3.3）。旧模态路径已退役。
+            // tab（继续上次的草稿）；提交后回收草稿 tab 并退回列表页（3.3 + 2026-09-11）。
+            // 旧模态路径已退役。
             // 两个 transient 服务为可选注入；未提供时静默跳过（同 CommitCreatedSlotFromTabAsync）。
             if (_transientPages == null || _entityPages == null)
             {
@@ -399,7 +400,7 @@ namespace Pulsar.ViewModels
 
             _entityPages.Register(
                 $"{SettingsPageIds.SlotEditor}:{draftEntityId}",
-                _ => BuildSlotCreationPage(contextKey, contextName));
+                _ => BuildSlotCreationPage(contextKey));
 
             var draftTitle = string.Format(_loc["Settings.SlotEditor.DraftTabTitleFormat"], contextName);
             await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, draftEntityId, draftTitle);
@@ -862,9 +863,10 @@ namespace Pulsar.ViewModels
 
         /// <summary>
         /// 构造新建（Create）草稿临时页（unify 3.2）：两步向导 VM（类型选择 → 配置）
-        /// 嵌入式提交（3.1/3.3），Save 不关对话框而是回调宿主提交并转换 tab。
+        /// 嵌入式提交（3.1/3.3），Save 不关对话框而是回调宿主提交，随后回收草稿 tab
+        /// 并退回列表页。
         /// </summary>
-        private Views.Pages.SettingsSlotEditorPage BuildSlotCreationPage(string contextKey, string contextName)
+        private Views.Pages.SettingsSlotEditorPage BuildSlotCreationPage(string contextKey)
         {
             var cards = BuildSlotTypeCards();
             var vm = new SlotEditorViewModel(
@@ -878,18 +880,22 @@ namespace Pulsar.ViewModels
                 _loc,
                 metadataRegistry: _pluginMetadataRegistry,
                 secretDisplayResolver: rawSecretId => _slotEditor.ResolveSecretDisplay(rawSecretId),
-                commitInPlaceAsync: created => CommitCreatedSlotFromTabAsync(created, contextKey, contextName));
+                commitInPlaceAsync: created => CommitCreatedSlotFromTabAsync(created, contextKey));
 
             return new Views.Pages.SettingsSlotEditorPage(vm, _themeService);
         }
 
         /// <summary>
-        /// 嵌入式提交（unify 3.3 + save-flow fix 2026-09-10）：把新 slot 提交为实体
-        /// <b>并立即落盘</b>，随后把草稿 tab 重注册为实体编辑 tab
-        /// （<c>slot-editor:&lt;ctx&gt;:&lt;slotNo&gt;</c>）——新建 → 编辑连续体验，
-        /// 无需二次点击，也不会再触发「未保存更改」守卫。
+        /// 嵌入式提交（unify 3.3 + save-flow fix 2026-09-10 + 回列表页 2026-09-11）：
+        /// 把新 slot 提交为实体<b>并立即落盘</b>，随后回收草稿 tab 并退回
+        /// 「自动化槽位」列表页。
+        ///
+        /// 2026-09-10 曾把草稿 tab 重注册为实体编辑 tab（新建 → 编辑连续体验）；
+        /// 2026-09-11 用户实测否定：保存应当是本次流程的终点，保存后停在编辑 tab
+        /// 反而要求用户再手动切回列表页看结果。现改为「保存 → 回收草稿 tab →
+        /// 回列表页」，新 slot 在列表里可见，需要继续调整时再点它开编辑 tab。
         /// </summary>
-        private async Task CommitCreatedSlotFromTabAsync(PluginSlot? createdSlot, string contextKey, string contextName)
+        private async Task CommitCreatedSlotFromTabAsync(PluginSlot? createdSlot, string contextKey)
         {
             if (createdSlot == null)
             {
@@ -918,24 +924,27 @@ namespace Pulsar.ViewModels
             // 更改 → 保存 → 又跳一次），保存机制因此显得反复跳转。
             await Save();
 
-            var draftCompositeId = $"{SettingsPageIds.SlotEditor}:{contextKey}:draft";
-
-            // 一次性切换：先把草稿 tab 重注册为实体编辑 tab，再单次导航过去。
-            // 注意不能先导航到常驻页再导航回来——第一次导航离开临时页时
-            // SettingsShellViewModel 会走 userInitiated 路径评估守卫，
-            // 那时 Save 尚未发生（本 bug 的原形态）。
-            _entityPages.Remove(draftCompositeId);
-            var entityId = $"{contextKey}:{createdSlot.Slot}";
-            _entityPages.Register($"{SettingsPageIds.SlotEditor}:{entityId}", _ => BuildSlotEditorPage(createdSlot));
-
-            // 草稿 tab 注销（不走脏确认：草稿已提交为实体并落盘），单次导航到实体编辑 tab。
-            await _transientPages.DiscardTransientPageAsync(draftCompositeId);
-
             // 提交成功的通知放在落盘之后：避免"保存失败但提示已添加"的假成功。
             SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], createdSlot.Label), ControlAppearance.Success);
 
-            var title = string.Format(_loc["Settings.SlotEditor.TabTitleFormat"], createdSlot.Label, contextName);
-            await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, entityId, title);
+            var draftCompositeId = $"{SettingsPageIds.SlotEditor}:{contextKey}:draft";
+            var draftWasActive = string.Equals(
+                _settingsShell.CurrentPageId,
+                draftCompositeId,
+                StringComparison.OrdinalIgnoreCase);
+
+            // 草稿 tab 注销（不走脏确认：草稿已提交为实体并落盘）。Discard 同时移除
+            // 实体页注册闭包，新建流程到此结束——不再注册新槽位的实体编辑 tab。
+            await _transientPages.DiscardTransientPageAsync(draftCompositeId);
+
+            // 退回「自动化槽位」列表页（2026-09-11 用户反馈）。草稿 tab 恰为当前页时，
+            // 注销已让窗口回落到默认页；这里再显式导航一次，把目标页钉在常量上，
+            // 不依赖 DefaultPageId 的当前取值。草稿 tab 不是当前页（理论上不可达，
+            // 保存按钮只存在于该页）时不打扰用户当前所在页。
+            if (draftWasActive)
+            {
+                await _settingsShell.NavigateAsync(SettingsPageIds.Slots, userInitiated: true);
+            }
         }
 
         [RelayCommand]

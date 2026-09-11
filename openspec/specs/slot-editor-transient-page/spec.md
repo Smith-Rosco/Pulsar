@@ -34,7 +34,7 @@ The settings shell SHALL offer a transient page template `slot-editor`. Opening 
 
 ### Requirement: Create flow SHALL be a two-step wizard inside the tab
 
-The create tab SHALL present step 1 as a slot-type picker and step 2 as the configuration form for the chosen type. The draft SHALL only enter the context's slot list when the user explicitly commits it (the "add to slots" action). After a successful commit the tab SHALL convert to edit mode for the newly created slot (id re-registered from `draft` to the assigned slot number) instead of closing.
+The create tab SHALL present step 1 as a slot-type picker and step 2 as the configuration form for the chosen type. The draft SHALL only enter the context's slot list when the user explicitly commits it (the "add to slots" action). After a successful commit the create tab SHALL be recycled and the shell SHALL return to the slots list page; the newly created slot SHALL NOT be left open in its own editor tab (it stays re-openable from the list). Committing SHALL also persist the change immediately, so no navigation guard prompts afterwards.
 
 #### Scenario: Type selection is step one
 
@@ -46,11 +46,11 @@ The create tab SHALL present step 1 as a slot-type picker and step 2 as the conf
 - **WHEN** the user returns to step 1 from step 2
 - **THEN** the configuration is reset for the newly chosen type and no slot is committed
 
-#### Scenario: Commit adds the slot and converts the tab
+#### Scenario: Commit adds the slot and returns to the slots list
 
 - **WHEN** the user completes configuration and commits
 - **THEN** the draft slot is appended to the context's slot list (subject to the same validation as the previous dialog flow)
-- **THEN** the tab id is re-registered to `slot-editor:<contextKey>:<slotNo>` and continues as an edit tab
+- **THEN** the create tab is recycled, no `slot-editor:<contextKey>:<slotNo>` tab is opened, and the current page becomes the slots list
 
 ### Requirement: Edit mode SHALL edit the live draft with the unified save flow
 
