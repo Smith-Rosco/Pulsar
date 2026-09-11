@@ -153,6 +153,10 @@ _Avoid_: SettingsViewModel (the god-object that used to own this), slot editing 
 The persistence seam of the Settings editor. Owns the Config Edit Session lifecycle (load / lazy-begin / commit), the working config draft, and the secret-store pipeline (load → merge pending → save → adopt persisted). Slot editing state stays in the Slot Editor Workspace; the session only decides when a draft is loaded and when it is persisted, so one-shot flows (profile delete, tutorial reset) commit through the same seam.
 _Avoid_: the five "begin a session" dances that used to live in SettingsViewModel, the double-owner `_config`
 
+**Secret Picker Seam**:
+The seam the secret picker dialog crosses (`ISecretPickerSeam`): list the visible secrets, read one payload for editing, stage, unstage, and remove a persisted one. The dialog knows nothing about where Secrets live; the production adapter composes the Slot Editor Workspace (staging owner) and the Settings Editor Session (persistence owner), and the test fake is the second adapter that makes the seam real. Removal is immediate today — the seam only relocates the write, it does not stage it.
+_Avoid_: handing the dialog the secret store, the metadata resolver, or the live staging dictionary — that made the dialog a second writer of the secret store and left the staging entry point with no production callers.
+
 **Slot List Mutator**:
 The single owner of "move a Slot and renumber 1..N" semantics for every slot surface in the editor (the Settings slot list and the wheel preview). Both surfaces share the same underlying list, so the mutation math lives in one place and the insert-position convention (GongSolutions) is applied exactly once.
 _Avoid_: the five duplicated renumber loops in SlotEditorWorkspace / SlotWheelEditorViewModel / LegacySlotConverter
