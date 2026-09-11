@@ -287,29 +287,7 @@ namespace Pulsar.ViewModels.Settings
 
             WithSuppressedDirty(() =>
             {
-                List<PluginSlot> sourceList = new List<PluginSlot>();
-
-                if (value.Key == "Launcher")
-                {
-                    if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.SwitchMode != null)
-                    {
-                        sourceList = globalProfile.SwitchMode;
-                    }
-                }
-                else if (value.Key == "Global")
-                {
-                    if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.CommandMode != null)
-                    {
-                        sourceList = globalProfile.CommandMode;
-                    }
-                }
-                else
-                {
-                    if (_config.Profiles.TryGetValue(value.Key, out var profile) && profile.CommandMode != null)
-                    {
-                        sourceList = profile.CommandMode;
-                    }
-                }
+                var sourceList = ResolveSlotSourceList(value) ?? new List<PluginSlot>();
 
                 _currentSlots.CollectionChanged -= OnCurrentSlotsCollectionChanged;
 
@@ -338,26 +316,39 @@ namespace Pulsar.ViewModels.Settings
             });
         }
 
+        /// <summary>
+        /// 上下文 → 槽位源列表的**唯一**映射规则：Launcher 读 Global.SwitchMode（启动器即切换面）、
+        /// Global 读 Global.CommandMode、其余上下文读各自 profile 的 CommandMode。
+        /// 加载选中上下文（<see cref="OnCurrentContextChanged"/>）与统计计数
+        /// （<see cref="UpdateContextStats"/>）都必须经由此处 —— 这条规则原先各写一遍，
+        /// 任一处漏改就会出现「列表有 N 个槽、徽标显示 0」。返回 null = 该上下文当前没有槽位列表。
+        /// </summary>
+        private List<PluginSlot>? ResolveSlotSourceList(ContextInfo context)
+        {
+            if (_config?.Profiles == null) return null;
+
+            if (context.Key == "Launcher")
+            {
+                return _config.Profiles.TryGetValue("Global", out var launcherProfile)
+                    ? launcherProfile.SwitchMode
+                    : null;
+            }
+
+            if (context.Key == "Global")
+            {
+                return _config.Profiles.TryGetValue("Global", out var globalProfile)
+                    ? globalProfile.CommandMode
+                    : null;
+            }
+
+            return _config.Profiles.TryGetValue(context.Key, out var profile)
+                ? profile.CommandMode
+                : null;
+        }
+
         private void UpdateContextStats(ContextInfo ctx)
         {
-            if (_config?.Profiles == null) return;
-
-            List<PluginSlot>? slots = null;
-
-            if (ctx.Key == "Launcher")
-            {
-                if (_config.Profiles.TryGetValue("Global", out var p)) slots = p.SwitchMode;
-            }
-            else if (ctx.Key == "Global")
-            {
-                if (_config.Profiles.TryGetValue("Global", out var p)) slots = p.CommandMode;
-            }
-            else
-            {
-                if (_config.Profiles.TryGetValue(ctx.Key, out var p)) slots = p.CommandMode;
-            }
-
-            ctx.SlotCount = slots?.Count ?? 0;
+            ctx.SlotCount = ResolveSlotSourceList(ctx)?.Count ?? 0;
         }
 
         private void UpdateCurrentContextVisuals()
