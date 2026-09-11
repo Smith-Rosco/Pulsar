@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Localization;
 using Pulsar.Helpers;
 using Pulsar.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using System;
@@ -57,7 +58,7 @@ namespace Pulsar.ViewModels.Dialogs
         private async Task PickIcon()
         {
             var picker = new IconPickerViewModel(_searchService, IconKey, customIconStore: _customIconStore);
-            var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectIcon"], picker, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
+            var result = await _dialogService.ShowCustomAsync(DialogIds.PickIcon, picker);
 
             if (result == DialogResult.Confirmed)
             {

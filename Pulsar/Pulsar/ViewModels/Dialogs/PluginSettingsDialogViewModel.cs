@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.WindowSwitching;
 using Pulsar.ViewModels.Base;
@@ -124,11 +125,7 @@ namespace Pulsar.ViewModels.Dialogs
 
             await inspector.InitializeAsync();
 
-            await dialogService.ShowCustomAsync(
-                _loc?["Inspector.Title"] ?? "Window Inspector",
-                inspector,
-                DialogButtons.None,
-                new Models.DialogSizeConstraints { Width = 780, Height = 560, MinWidth = 600, MinHeight = 400 });
+            await dialogService.ShowCustomAsync(DialogIds.WindowInspector, inspector);
         }
 
         public Task<bool> CanCloseAsync(DialogResult result)

@@ -2,10 +2,9 @@
 
 using System;
 using System.Threading.Tasks;
-using Pulsar.Models;
 using Pulsar.Models.Enums;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
-using DialogButtons = Pulsar.Models.Enums.DialogButtons;
 
 namespace Pulsar.ViewModels.Settings
 {
@@ -20,6 +19,12 @@ namespace Pulsar.ViewModels.Settings
     /// caller's delegate because they touch <c>SettingsViewModel</c>-owned state
     /// and differ per flow. The recipe owns the shell so a new flow cannot
     /// drift into a different show/confirm shape.
+    ///
+    /// <para>
+    /// Since ADR-033 the flow takes a <see cref="DialogId"/> instead of a title:
+    /// title, size preset and buttons are owned by the dialog catalog row, so the
+    /// recipe no longer threads presentation choices through every caller.
+    /// </para>
     /// </summary>
     public sealed class SettingsDialogFlows
     {
@@ -31,29 +36,20 @@ namespace Pulsar.ViewModels.Settings
         }
 
         /// <summary>
-        /// Shows a content dialog and runs <paramref name="onConfirmed"/> only
+        /// Shows a catalog dialog and runs <paramref name="onConfirmed"/> only
         /// when the user confirms. The delegate receives the same view-model
         /// instance that was shown, so confirmed reads see the user's edits.
+        /// Title, size preset, buttons and theme come from the dialog catalog row.
         /// </summary>
         public async Task RunAsync<TViewModel>(
-            string title,
+            DialogId dialogId,
             TViewModel viewModel,
-            Func<TViewModel, Task> onConfirmed,
-            DialogButtons buttons = DialogButtons.OkCancel,
-            DialogSizeConstraints? sizeConstraints = null)
+            Func<TViewModel, Task> onConfirmed)
         {
             if (viewModel == null) throw new ArgumentNullException(nameof(viewModel));
             if (onConfirmed == null) throw new ArgumentNullException(nameof(onConfirmed));
 
-            DialogResult result;
-            if (sizeConstraints != null)
-            {
-                result = await _dialogService.ShowCustomAsync(title, viewModel, buttons, sizeConstraints);
-            }
-            else
-            {
-                result = await _dialogService.ShowCustomAsync(title, viewModel, buttons);
-            }
+            var result = await _dialogService.ShowCustomAsync(dialogId, viewModel);
 
             if (result == DialogResult.Confirmed)
             {
@@ -62,23 +58,22 @@ namespace Pulsar.ViewModels.Settings
         }
 
         /// <summary>
-        /// Synchronous variant of <see cref="RunAsync{TViewModel}"/> for flows
-        /// whose confirmed-side work contains no awaits.
+        /// Synchronous variant of
+        /// <see cref="RunAsync{TViewModel}(DialogId, TViewModel, Func{TViewModel, Task})"/>
+        /// for flows whose confirmed-side work contains no awaits.
         /// </summary>
         public Task RunAsync<TViewModel>(
-            string title,
+            DialogId dialogId,
             TViewModel viewModel,
-            Action<TViewModel> onConfirmed,
-            DialogButtons buttons = DialogButtons.OkCancel,
-            DialogSizeConstraints? sizeConstraints = null)
+            Action<TViewModel> onConfirmed)
         {
             if (onConfirmed == null) throw new ArgumentNullException(nameof(onConfirmed));
 
-            return RunAsync(title, viewModel, vm =>
+            return RunAsync(dialogId, viewModel, vm =>
             {
                 onConfirmed(vm);
                 return Task.CompletedTask;
-            }, buttons, sizeConstraints);
+            });
         }
 
         /// <summary>

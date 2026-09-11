@@ -4,8 +4,8 @@ using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
-using Pulsar.Models;
 using Pulsar.Models.Enums;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Settings;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -16,6 +16,12 @@ namespace Pulsar.Tests.ViewModels
     /// Direct tests for the Settings dialog-flow recipe (architecture review
     /// 2026-09-04, candidate M): show → confirm → dispatch, with the delegate
     /// skipped on any non-confirmed result.
+    ///
+    /// <para>
+    /// Since ADR-033 the recipe takes a <see cref="DialogId"/> rather than a title —
+    /// title, size and buttons belong to the catalog row, so these tests also pin
+    /// that the flow does not start owning presentation choices again.
+    /// </para>
     /// </summary>
     public class SettingsDialogFlowsTests
     {
@@ -33,12 +39,12 @@ namespace Pulsar.Tests.ViewModels
             var dialogService = new Mock<IDialogService>();
             var vm = new ProbeViewModel();
             dialogService
-                .Setup(s => s.ShowCustomAsync("t", vm, DialogButtons.OkCancel))
+                .Setup(s => s.ShowCustomAsync(DialogIds.AddSecretToSlot, vm, It.IsAny<object[]>()))
                 .ReturnsAsync(DialogResult.Confirmed);
 
             ProbeViewModel? received = null;
             var flows = CreateFlows(dialogService);
-            await flows.RunAsync("t", vm, shown =>
+            await flows.RunAsync(DialogIds.AddSecretToSlot, vm, shown =>
             {
                 received = shown;
                 shown.ConfirmHits++;
@@ -46,7 +52,7 @@ namespace Pulsar.Tests.ViewModels
 
             received.Should().BeSameAs(vm);
             vm.ConfirmHits.Should().Be(1);
-            dialogService.Verify(s => s.ShowCustomAsync("t", vm, DialogButtons.OkCancel), Times.Once);
+            dialogService.Verify(s => s.ShowCustomAsync(DialogIds.AddSecretToSlot, vm, It.IsAny<object[]>()), Times.Once);
         }
 
         [Fact]
@@ -55,49 +61,37 @@ namespace Pulsar.Tests.ViewModels
             var dialogService = new Mock<IDialogService>();
             var vm = new ProbeViewModel();
             dialogService
-                .Setup(s => s.ShowCustomAsync("t", vm, DialogButtons.OkCancel))
+                .Setup(s => s.ShowCustomAsync(DialogIds.AddSecretToSlot, vm, It.IsAny<object[]>()))
                 .ReturnsAsync(DialogResult.Cancelled);
 
             var flows = CreateFlows(dialogService);
-            await flows.RunAsync("t", vm, shown => shown.ConfirmHits++);
+            await flows.RunAsync(DialogIds.AddSecretToSlot, vm, shown => shown.ConfirmHits++);
 
             vm.ConfirmHits.Should().Be(0);
         }
 
         [Fact]
-        public async Task RunAsync_WithoutConstraints_UsesSimpleOverload()
+        public async Task RunAsync_ShowsThroughTheCatalogId_AndNeverChoosesATitle()
         {
             var dialogService = new Mock<IDialogService>();
             var vm = new ProbeViewModel();
             dialogService
-                .Setup(s => s.ShowCustomAsync("t", vm, DialogButtons.Ok))
+                .Setup(s => s.ShowCustomAsync(It.IsAny<DialogId>(), It.IsAny<ProbeViewModel>(), It.IsAny<object[]>()))
                 .ReturnsAsync(DialogResult.Cancelled);
 
             var flows = CreateFlows(dialogService);
-            await flows.RunAsync("t", vm, _ => { }, DialogButtons.Ok);
+            await flows.RunAsync(DialogIds.PickProcess, vm, _ => { });
 
-            dialogService.Verify(s => s.ShowCustomAsync("t", vm, DialogButtons.Ok), Times.Once);
+            // The id is handed straight to the service; the recipe supplies no title,
+            // size or button set of its own (that would re-open the drift ADR-033 closed).
             dialogService.Verify(
-                s => s.ShowCustomAsync(It.IsAny<string>(), It.IsAny<ProbeViewModel>(), It.IsAny<DialogButtons>(), It.IsAny<DialogSizeConstraints>()),
-                Times.Never);
-        }
-
-        [Fact]
-        public async Task RunAsync_WithConstraints_UsesConstrainedOverload()
-        {
-            var dialogService = new Mock<IDialogService>();
-            var vm = new ProbeViewModel();
-            var constraints = new DialogSizeConstraints { Width = 860, Height = 700 };
-            dialogService
-                .Setup(s => s.ShowCustomAsync("t", vm, DialogButtons.OkCancel, constraints))
-                .ReturnsAsync(DialogResult.Confirmed);
-
-            var flows = CreateFlows(dialogService);
-            await flows.RunAsync("t", vm, shown => shown.ConfirmHits++, DialogButtons.OkCancel, constraints);
-
-            vm.ConfirmHits.Should().Be(1);
+                s => s.ShowCustomAsync(DialogIds.PickProcess, vm, It.IsAny<object[]>()),
+                Times.Once);
             dialogService.Verify(
                 s => s.ShowCustomAsync(It.IsAny<string>(), It.IsAny<ProbeViewModel>(), It.IsAny<DialogButtons>()),
+                Times.Never);
+            dialogService.Verify(
+                s => s.ShowCustomAsync(It.IsAny<string>(), It.IsAny<ProbeViewModel>(), It.IsAny<DialogButtons>(), It.IsAny<Pulsar.Models.DialogSizeConstraints>()),
                 Times.Never);
         }
 
@@ -105,7 +99,7 @@ namespace Pulsar.Tests.ViewModels
         public async Task RunAsync_NullViewModel_Throws()
         {
             var flows = CreateFlows(new Mock<IDialogService>());
-            Func<Task> act = () => flows.RunAsync<ProbeViewModel>("t", null!, _ => { });
+            Func<Task> act = () => flows.RunAsync<ProbeViewModel>(DialogIds.AddSecretToSlot, null!, _ => { });
 
             await act.Should().ThrowAsync<ArgumentNullException>();
         }
@@ -114,7 +108,10 @@ namespace Pulsar.Tests.ViewModels
         public async Task RunAsync_NullDelegate_Throws()
         {
             var flows = CreateFlows(new Mock<IDialogService>());
-            Func<Task> act = () => flows.RunAsync<ProbeViewModel>("t", new ProbeViewModel(), (Action<ProbeViewModel>)null!);
+            Func<Task> act = () => flows.RunAsync(
+                DialogIds.AddSecretToSlot,
+                new ProbeViewModel(),
+                (Action<ProbeViewModel>)null!);
 
             await act.Should().ThrowAsync<ArgumentNullException>();
         }

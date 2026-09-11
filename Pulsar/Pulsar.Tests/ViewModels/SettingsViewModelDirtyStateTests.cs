@@ -117,11 +117,10 @@ namespace Pulsar.Tests.ViewModels
             var originalIcon = slot.IconKey;
             harness.DialogService
                 .Setup(service => service.ShowCustomAsync(
-                    It.IsAny<string>(),
+                    DialogIds.PickIcon,
                     It.IsAny<IconPickerViewModel>(),
-                    It.IsAny<DialogButtons>(),
-                    It.IsAny<DialogSizeConstraints>()))
-                .Callback<string, IconPickerViewModel, DialogButtons, DialogSizeConstraints>((_, picker, _, _) => picker.SelectedKey = "E8A7")
+                    It.IsAny<object[]>()))
+                .Callback<DialogId, IconPickerViewModel, object[]>((_, picker, _) => picker.SelectedKey = "E8A7")
                 .ReturnsAsync(DialogResult.Cancelled);
 
             await viewModel.PickIcon(slot);

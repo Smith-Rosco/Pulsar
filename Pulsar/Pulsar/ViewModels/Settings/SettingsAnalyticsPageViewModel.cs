@@ -196,11 +196,7 @@ namespace Pulsar.ViewModels.Settings
             var plugin = MostUsedPlugins.FirstOrDefault(p => p.PluginId == pluginId);
             var pluginName = plugin?.DisplayName ?? pluginId;
             var vm = new Pulsar.ViewModels.Dialogs.PluginLogViewerViewModel(_logService, pluginId, pluginName);
-            await _dialogService.ShowCustomAsync(
-                string.Format(_loc?["Notification.PluginLogsTitleFormat"] ?? "Plugin Logs: {0}", pluginName),
-                vm,
-                Models.Enums.DialogButtons.Ok,
-                Models.DialogSizeConstraints.Large);
+            await _dialogService.ShowCustomAsync(DialogIds.PluginLogs, vm, pluginName);
         }
 
         /// <summary>
@@ -224,11 +220,11 @@ namespace Pulsar.ViewModels.Settings
             var vm = new Pulsar.ViewModels.Dialogs.PluginAnalyticsDetailViewModel(
                 item, _loc, _pluginRegistry, _recommendationEngine);
 
-            await _dialogService.ShowCustomAsync(
-                string.Format(_loc?["Dialog.PluginAnalyticsDetail.Title"] ?? "Plugin Details", item.DisplayName),
-                vm,
-                Models.Enums.DialogButtons.Ok,
-                Models.DialogSizeConstraints.Large);
+            // No title argument: the catalog row's title ("Plugin Details" / "插件详情")
+            // has no {0} placeholder, so passing the display name here was silently
+            // discarded by string.Format. Behaviour is unchanged; the resx value is the
+            // thing to fix if the name should appear (see ADR-033 follow-up).
+            await _dialogService.ShowCustomAsync(DialogIds.PluginAnalyticsDetails, vm);
         }
 
         [RelayCommand]

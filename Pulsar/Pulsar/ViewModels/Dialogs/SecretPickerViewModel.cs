@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Localization;
 using Pulsar.Plugins.Core.SecretFill.Contracts;
 using Pulsar.Plugins.Core.SecretFill.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -115,7 +116,7 @@ namespace Pulsar.ViewModels.Dialogs
             var vm = new QuickSecretsViewModel(_secretProtector);
             vm.LoadForCreate(string.Empty, string.Empty, false);
 
-            var addResult = await _dialogService.ShowCustomAsync(_loc["Dialog.SecretPicker.AddSecret"], vm, Pulsar.Models.Enums.DialogButtons.OkCancel);
+            var addResult = await _dialogService.ShowCustomAsync(DialogIds.AddSecret, vm);
 
             if (addResult == DialogResult.Confirmed)
             {
@@ -148,7 +149,7 @@ namespace Pulsar.ViewModels.Dialogs
             bool autoEnter = false;
             vm.LoadForEdit(entry.Label, payload.Account, payload.EncryptedData, autoEnter);
 
-            var result = await _dialogService.ShowCustomAsync(_loc["Dialog.SecretPicker.EditSecret"], vm, Pulsar.Models.Enums.DialogButtons.OkCancel);
+            var result = await _dialogService.ShowCustomAsync(DialogIds.EditSecret, vm);
 
             if (result == DialogResult.Confirmed)
             {

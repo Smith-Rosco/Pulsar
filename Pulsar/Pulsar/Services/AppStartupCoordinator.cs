@@ -452,7 +452,7 @@ namespace Pulsar.Services
                 // logged below, exactly like the tutorial path.
                 var uiDispatcher = _dispatcherProvider();
                 await await uiDispatcher.InvokeAsync(
-                    () => _dialogService.ShowCustomAsync(_localizationService["FirstLaunch.SetupTitle"], wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light),
+                    () => _dialogService.ShowCustomAsync(DialogIds.FirstLaunchSetup, wizard),
                     System.Windows.Threading.DispatcherPriority.Normal,
                     cancellationToken);
             }

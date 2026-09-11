@@ -3,7 +3,7 @@
 **Status**: Published  
 **Scope**: Architecture  
 **Applies To**: All dialogs in Pulsar  
-**Last Updated**: 2026-09-08
+**Last Updated**: 2026-09-11
 
 ---
 
@@ -11,7 +11,7 @@
 
 Pulsar uses a unified dialog architecture (v4.1.0+) where all dialogs are managed through `DialogService` and displayed in `DialogHostWindow`. Never create standalone `Window` classes for dialogs.
 
-**Always choose the correct size preset** based on dialog content complexity.
+**Register every dialog in the dialog catalog** ([ADR-033](../decisions/033-dialog-catalog-single-registration-surface.md)): one row in `Services/DialogCatalog.cs` owns the title key, content type, size preset, buttons and theme. Call sites show the dialog with `ShowCustomAsync(DialogId.X, content)` and choose **none** of them. Choosing a title key or a `DialogSizeConstraints` preset at the call site is deprecated.
 
 **Heavy configuration belongs in settings transient pages, not modals** (ADR-029, openspec `2026-09-08-dynamic-settings-tabs`): rich, revisited configuration (gesture summon, plugin settings, process blacklist) migrates to sidebar transient pages / dedicated settings pages. Dialogs remain the right tool for one-shot confirmations, pickers (Icon/Process/Secret/Color) and warnings — not for long-form configuration editing.
 
@@ -127,21 +127,22 @@ var color = await _dialogService.ShowColorPickerAsync("Pick Color", "#FF5733");
 
 ### ShowCustomAsync()
 ```csharp
-// Without size constraint (uses Medium by default)
-var result = await _dialogService.ShowCustomAsync(
-    "My Dialog", 
-    myViewModel, 
-    DialogButtons.OkCancel);
+// RECOMMENDED — a registered dialog. Title, size, buttons and theme come from the
+// catalog row; the call site supplies only the id and the content view model.
+var result = await _dialogService.ShowCustomAsync(DialogIds.PickIcon, iconPickerVm);
 
-// With explicit size constraint (RECOMMENDED)
-var result = await _dialogService.ShowCustomAsync(
-    "Select Icon", 
-    iconPickerVm, 
-    DialogButtons.OkCancel,
-    DialogSizeConstraints.LargeResizable);
+// Registered dialog whose title is a composite format string (row TitleIsFormat = true):
+// the trailing arguments feed the row's {0} placeholder.
+var result = await _dialogService.ShowCustomAsync(DialogIds.PluginLogs, logsVm, pluginName);
 ```
-- **Size**: Medium by default, **always specify for custom dialogs**
-- **Use**: Any custom ViewModel
+- **Size / title / buttons**: owned by the catalog row — never chosen at the call site
+- **Use**: every dialog that has a catalog row (i.e. all of them)
+
+The `string`-keyed overloads still exist for dynamic titles and one-off sizes;
+`ShowMessageAsync` / `ShowConfirmationAsync` / `ShowInputAsync` /
+`ShowColorPickerAsync` are built on them and are not catalog dialogs (a message
+body is not a registered view model). Using them for a dialog that *has* a row
+re-opens the drift [ADR-033](../decisions/033-dialog-catalog-single-registration-surface.md) closed.
 
 ---
 
@@ -185,11 +186,11 @@ Create a UserControl in `Views/Dialogs/Contents/`:
 </UserControl>
 ```
 
-### Step 3: Register DataTemplate (REQUIRED)
+### Step 3: Register the DataTemplate (REQUIRED)
 
-**CRITICAL**: You MUST register a DataTemplate in `DialogHostWindow.xaml` for your ViewModel, otherwise the dialog will display the ViewModel's type name instead of your UI.
+**CRITICAL**: You MUST register an implicit `DataTemplate` in `Themes/DialogTemplates.xaml` for your ViewModel, otherwise the dialog displays the ViewModel's type name instead of your UI.
 
-Add to `Views/Dialogs/DialogHostWindow.xaml` in the `<Window.Resources>` section:
+Add beside the other dialog templates in `Themes/DialogTemplates.xaml`:
 
 ```xml
 <DataTemplate DataType="{x:Type dialogs:MyDialogViewModel}">
@@ -197,20 +198,32 @@ Add to `Views/Dialogs/DialogHostWindow.xaml` in the `<Window.Resources>` section
 </DataTemplate>
 ```
 
-**Why this is required**: WPF's `ContentPresenter` uses implicit DataTemplates to determine how to render objects. Without a registered DataTemplate, it falls back to calling `ToString()` on your ViewModel, which displays the fully qualified type name (e.g., "Pulsar.ViewModels.Dialogs.MyDialogViewModel").
+**Why this is required**: WPF's `ContentPresenter` uses implicit DataTemplates to determine how to render objects. Without a registered DataTemplate it falls back to calling `ToString()` on your ViewModel, which displays the fully qualified type name (e.g. "Pulsar.ViewModels.Dialogs.MyDialogViewModel"). `DialogService` additionally fails fast through `HasTemplate`, and `DialogCatalogTests` fails the build.
 
-**Location**: `Pulsar/Pulsar/Views/Dialogs/DialogHostWindow.xaml` around line 40-80 (in the Dialog ViewModel Templates section)
+**Location**: `Pulsar/Pulsar/Themes/DialogTemplates.xaml`. The dictionary is merged twice — `App.xaml` (feeds `DialogService.HasTemplate`'s fail-fast) and `DialogHostWindow.xaml` (feeds the visual tree) — but both read the same file, so there is nothing to keep in sync.
 
-### Step 4: Call Dialog with Correct Size
+### Step 4: Register the catalog row (REQUIRED)
+
+Add a `DialogId` constant and one `DialogRegistration` row in `Services/DialogCatalog.cs`. The row owns the title key, size preset, buttons and theme:
+
+```csharp
+// In DialogIds
+public static readonly DialogId MyDialog = new("MyDialog");
+
+// In DialogCatalog._registrations
+new(DialogIds.MyDialog, "Dialog.MyDialog.Title", typeof(MyDialogViewModel), DialogSizeConstraints.Medium)
+```
+
+Add the title key to **both** `Resources/Strings.resx` and `Resources/Strings.zh-CN.resx`. If the title is a composite format string (e.g. "Configure {0}"), set `TitleIsFormat = true` on the row and pass the arguments at the call site.
+
+### Step 5: Show the Dialog
 
 ```csharp
 var vm = new MyDialogViewModel();
-var result = await _dialogService.ShowCustomAsync(
-    "My Dialog", 
-    vm, 
-    DialogButtons.OkCancel,
-    DialogSizeConstraints.Medium); // Choose appropriate size!
+var result = await _dialogService.ShowCustomAsync(DialogIds.MyDialog, vm);
 ```
+
+No title key, no size preset, no button set at the call site — the row owns them. `DialogCatalogTests` verifies all three legs (title key present in both resx, a template for the content type, a row for every template or a documented exemption) on every build.
 
 ---
 
@@ -218,24 +231,16 @@ var result = await _dialogService.ShowCustomAsync(
 
 ### List Selection Dialog
 ```csharp
-// Use LargeResizable for lists with many items
+// The row owns the size: DialogIds.PickProcess is LargeResizable (resizable + maximizable).
 var picker = new ProcessPickerViewModel(_windowService);
-var result = await _dialogService.ShowCustomAsync(
-    "Select Application", 
-    picker, 
-    DialogButtons.OkCancel,
-    DialogSizeConstraints.LargeResizable);
+var result = await _dialogService.ShowCustomAsync(DialogIds.PickProcess, picker);
 ```
 
 ### Form Dialog
 ```csharp
-// Use Medium for forms
+// Dialogs.AddProfile's row is Medium.
 var vm = new InputProfileViewModel(...);
-var result = await _dialogService.ShowCustomAsync(
-    "New Profile", 
-    vm, 
-    DialogButtons.OkCancel,
-    DialogSizeConstraints.Medium);
+var result = await _dialogService.ShowCustomAsync(DialogIds.AddProfile, vm);
 ```
 
 ### Confirmation with Destructive Action
@@ -280,8 +285,9 @@ DialogPlacement.CenterActiveWindow // Relative to active window
 - ❌ **Deprecated**: Manual theme application with `IThemeService.ApplyTheme()`
 - ❌ **Deprecated**: Manual Owner setting
 - ❌ **Deprecated**: Using default Medium size for all custom dialogs
+- ❌ **Deprecated**: Choosing a title key and a `DialogSizeConstraints` preset at the call site for a dialog that has a catalog row
 - ✅ **Recommended**: Use `DialogService` for all dialogs
-- ✅ **Recommended**: Always specify `DialogSizeConstraints` for custom dialogs
+- ✅ **Recommended**: Give each dialog a catalog row and show it with `ShowCustomAsync(DialogId.X, content)` (ADR-033)
 - ✅ **Recommended**: Use `ShowMessageAsync` with `DialogType` for better UX
 
 ---
@@ -291,26 +297,33 @@ DialogPlacement.CenterActiveWindow // Relative to active window
 ### Dialog shows ViewModel type name instead of UI
 **Symptom**: Dialog displays "Pulsar.ViewModels.Dialogs.MyDialogViewModel" instead of your custom UI.
 
-**Root Cause**: Missing DataTemplate registration in `DialogHostWindow.xaml`.
+**Root Cause**: Missing DataTemplate registration in `Themes/DialogTemplates.xaml`.
 
-**Solution**: Add DataTemplate registration in `Views/Dialogs/DialogHostWindow.xaml`:
+**Solution**: Add the DataTemplate in `Themes/DialogTemplates.xaml` (see Step 3):
 ```xml
 <DataTemplate DataType="{x:Type dialogs:MyDialogViewModel}">
     <contents:MyDialogContent/>
 </DataTemplate>
 ```
 
+### `DialogCatalogTests` fails after adding a dialog
+**Symptom**: Build fails with "every catalog title key must resolve", "must have an implicit DataTemplate", or "a format flag that disagrees with the resx value".
+
+**Root Cause**: One of the three catalog legs is missing or inconsistent — the title key is absent from one of the two resx files, the content type has no DataTemplate, the template has no catalog row, or `TitleIsFormat` disagrees with whether the resx **value** contains `{0}`.
+
+**Solution**: Fix the leg the message names. For the last case: a value with `{0}` needs `TitleIsFormat = true` on the row plus the argument at the call site; a value without `{0}` needs `TitleIsFormat = false` (or the placeholder added when the title genuinely should include the value).
+
 ### Dialog is too large for simple confirmation
 **Solution**: Use `ShowConfirmationAsync()` or `ShowMessageAsync()` instead of custom dialog.
 
 ### List content is cramped
-**Solution**: Use `DialogSizeConstraints.LargeResizable` to allow maximizing.
+**Solution**: The row's `DialogSizeConstraints` decides — change it in `DialogCatalog`, not at the call site. `LargeResizable` allows maximizing.
 
 ### Icons not showing
 **Check**: Icons only show for string content in `ShowMessageAsync()`, not custom ViewModels.
 
 ### Maximize button visible when it shouldn't be
-**Check**: Ensure you're using the correct size preset (not LargeResizable).
+**Check**: The catalog row's size preset — `LargeResizable` enables maximize, `Large` does not.
 
 ---
 
@@ -323,6 +336,7 @@ DialogPlacement.CenterActiveWindow // Relative to active window
 ---
 
 **Change History**:
+- v1.3.0 (2026-09-11): Dialog catalog (ADR-033) — `ShowCustomAsync(DialogId, content)` is the recommended path; a catalog row owns title key / size / buttons / theme; new-dialog recipe gains a row step; DataTemplate location corrected to `Themes/DialogTemplates.xaml`; troubleshooting for the catalog guards
 - v1.2.0 (2026-03-07): Emphasized DataTemplate registration requirement, added troubleshooting for missing DataTemplate
 - v1.1.0 (2026-03-07): Added XSmall/LargeResizable presets, icon display, button semantics, size selection guide
 - v1.0.0 (2026-03-03): Initial extraction from AGENTS.md

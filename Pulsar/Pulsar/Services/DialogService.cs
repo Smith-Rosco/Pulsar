@@ -111,6 +111,48 @@ namespace Pulsar.Services
             });
         }
 
+        /// <summary>
+        /// Shows a dialog registered in <see cref="DialogCatalog"/>. Title key, size
+        /// preset, buttons and theme all come from the catalog row, so the call site
+        /// supplies only the id and the content instance.
+        /// </summary>
+        public async Task<Pulsar.Models.Enums.DialogResult> ShowCustomAsync<TViewModel>(
+            DialogId dialogId,
+            TViewModel content,
+            params object[] titleArgs)
+        {
+            var registration = DialogCatalog.GetRequired(dialogId);
+            var title = ResolveTitle(registration, titleArgs);
+
+            return await ShowCustomAsync(
+                title,
+                content,
+                registration.Buttons,
+                registration.SizeConstraints,
+                registration.ThemeOverride);
+        }
+
+        /// <summary>
+        /// Resolves a catalog row's title. Formatting is driven by the row's
+        /// <see cref="DialogRegistration.TitleIsFormat"/> rather than by the presence of
+        /// arguments, so a row that expects arguments but receives none fails loudly
+        /// instead of rendering a literal <c>{0}</c>.
+        /// </summary>
+        private string ResolveTitle(DialogRegistration registration, object[]? titleArgs)
+        {
+            var template = _loc[registration.TitleKey];
+            if (string.IsNullOrEmpty(template))
+            {
+                // LocalizationService already falls back to the key itself; this keeps
+                // the failure legible if a null/empty value ever gets through.
+                template = registration.TitleKey;
+            }
+
+            return registration.TitleIsFormat
+                ? string.Format(template, titleArgs ?? [])
+                : template;
+        }
+
         public async Task<string?> ShowInputAsync(string title, string message, string defaultValue = "")
         {
             return await RunOnUi(() =>

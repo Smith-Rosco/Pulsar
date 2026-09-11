@@ -432,7 +432,7 @@ namespace Pulsar.ViewModels.Settings
             }
 
             var vm = new Pulsar.ViewModels.Dialogs.PluginLogViewerViewModel(_logService, Id, Name);
-            await _dialogService.ShowCustomAsync(string.Format(_loc?["Notification.PluginLogsTitleFormat"] ?? "Plugin Logs: {0}", Name), vm, Models.Enums.DialogButtons.Ok, Models.DialogSizeConstraints.Large);
+            await _dialogService.ShowCustomAsync(DialogIds.PluginLogs, vm, Name);
         }
 
         /// <summary>
@@ -466,21 +466,7 @@ namespace Pulsar.ViewModels.Settings
 
             var viewModel = new Pulsar.ViewModels.Dialogs.ExampleLibraryViewModel(libraryService, _loc);
 
-            var result = await _dialogService.ShowCustomAsync(
-                _loc["ExampleLibrary.Title"],
-                viewModel,
-                Models.Enums.DialogButtons.None,
-                new Models.DialogSizeConstraints
-                {
-                    Width = 620,
-                    Height = 480,
-                    MinWidth = 520,
-                    MinHeight = 400,
-                    MaxWidth = 900,
-                    MaxHeight = 700,
-                    AllowResize = true,
-                    ShowMaximizeButton = true
-                });
+            var result = await _dialogService.ShowCustomAsync(DialogIds.ExampleLibrary, viewModel);
 
             if (result == Models.Enums.DialogResult.Confirmed && !string.IsNullOrEmpty(viewModel.ImportedScriptPath))
             {
@@ -516,21 +502,7 @@ namespace Pulsar.ViewModels.Settings
                 }
             }
 
-            await _dialogService.ShowCustomAsync(
-                _loc["Bookmarklet.ScriptEditor.Title"],
-                editor,
-                Models.Enums.DialogButtons.None,
-                new Models.DialogSizeConstraints
-                {
-                    Width = 720,
-                    Height = 560,
-                    MinWidth = 560,
-                    MinHeight = 420,
-                    MaxWidth = 1200,
-                    MaxHeight = 900,
-                    AllowResize = true,
-                    ShowMaximizeButton = true
-                });
+            await _dialogService.ShowCustomAsync(DialogIds.ScriptEditor, editor);
         }
 
         [RelayCommand]
@@ -561,10 +533,7 @@ namespace Pulsar.ViewModels.Settings
                     && diagnosticsEnabled;
 
                 var vm = new ProcessBlacklistViewModel(_discoveryService, _processRegistryService, currentBlacklist, enableSwitchDiagnostics);
-                var result = await _dialogService.ShowCustomAsync(
-                    _loc?["Notification.ProcessBlacklistTitle"] ?? "Process Blacklist",
-                    vm,
-                    Models.Enums.DialogButtons.OkCancel);
+                var result = await _dialogService.ShowCustomAsync(DialogIds.ProcessBlacklist, vm);
 
                 if (result == Models.Enums.DialogResult.Confirmed)
                 {
@@ -599,11 +568,7 @@ namespace Pulsar.ViewModels.Settings
             }
 
             var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _discoveryService, _configService, _loc, _exclusionPolicy);
-            var dialogResult = await _dialogService.ShowCustomAsync(
-                string.Format(_loc?["Notification.ConfigureTitleFormat"] ?? "Configure {0}", Name),
-                dialogVm,
-                Models.Enums.DialogButtons.None,
-                new Models.DialogSizeConstraints { Width = 550, Height = 500, MinWidth = 400, MinHeight = 300 });
+            var dialogResult = await _dialogService.ShowCustomAsync(DialogIds.PluginSettings, dialogVm, Name);
 
             if (dialogResult == Models.Enums.DialogResult.Confirmed)
             {

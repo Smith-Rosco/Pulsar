@@ -67,7 +67,7 @@
 |---|---|
 | 构建 / 运行命令 | [Docs/ops/BUILD_AND_RUN.md](./Docs/ops/BUILD_AND_RUN.md) |
 | 新增 / 修改插件 | [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)、[Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) |
-| 新增对话框 | [Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md) —— **必须同时指定 DialogSizeConstraints 并注册 DataTemplate！** |
+| 新增对话框 | [Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md) —— **在 `Themes/DialogTemplates.xaml` 注册 DataTemplate，并在 `Services/DialogCatalog.cs` 登记一行（标题键 / 尺寸 / 按钮 / 主题），再用 `ShowCustomAsync(DialogId.X, content)` 展示。** [ADR-033](./Docs/decisions/033-dialog-catalog-single-registration-surface.md) |
 | 新增 / 修改设置页 | `Services/SettingsPageCatalog.cs`（注册；按需动态页签用 `IsTransient`）+ `Services/SettingsPageFactory.cs`（注册创建器）+ resx 键。瞬态页（Transient pages）：按类型单例，干净离开时自动回收 —— [029-settings-transient-pages.md](./Docs/decisions/029-settings-transient-pages.md)。重型配置用瞬态页 / 专用页，**不用模态框**（模态框仅用于一次性确认与选择器） |
 | 修改 UI（XAML） | [Docs/guides/UI_BEST_PRACTICES.md](./Docs/guides/UI_BEST_PRACTICES.md)、[Docs/guides/COMPONENT_LIBRARY.md](./Docs/guides/COMPONENT_LIBRARY.md) |
 | 径向菜单交互 / 状态 | `ViewModels/MenuSession.cs`（状态机）、`ViewModels/RadialMenuViewModel.cs`（薄绑定投影）。策略类依赖 `IMenuSession`，**绝不依赖 VM**。 [008-menu-session-refactor.md](./Docs/decisions/008-menu-session-refactor.md) |
@@ -105,7 +105,7 @@
 
 - **新增服务**：在 `Services/Interfaces/` 定义接口 → 在 `Services/` 实现 → 在 `App.xaml.cs`（`ConfigureServices`）注册。
 - **新增插件**：选定分层 → 继承 `PluginBase<T>` → 构造函数注入依赖 → 实现 `ExecuteAsync()` 与元数据 → 只使用 `PulsarContext`。示例：`Pulsar/Pulsar/Plugins/Extensions/Command/CommandPlugin.cs`。深入阅读：[PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md) · [Docs/guides/PLUGIN_MIGRATION_GUIDE.md](./Docs/guides/PLUGIN_MIGRATION_GUIDE.md)。
-- **新增对话框**：在 `ViewModels/Dialogs/` 实现 `IDialogViewModel` → 在 `Views/Dialogs/Contents/` 建 UserControl → **在 `Views/Dialogs/DialogHostWindow.xaml` 注册 DataTemplate** → 使用带 `DialogSizeConstraints` 的 `DialogService.ShowCustomAsync<T>()`。深入阅读：[Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md)。
+- **新增对话框**：在 `ViewModels/Dialogs/` 实现 `IDialogViewModel` → 在 `Views/Dialogs/Contents/` 建 UserControl → **在 `Themes/DialogTemplates.xaml` 注册 DataTemplate** → **在 `Services/DialogCatalog.cs` 登记一行（id + 标题键 + 尺寸预设 + 按钮 + 主题）** → 用 `DialogService.ShowCustomAsync(DialogId.X, content)` 展示。三条链路由 `DialogCatalogTests` / `DialogTemplateRegistrationTests` 守卫。深入阅读：[Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md)。
 - **新增设置页**：常驻页 → 在 `SettingsPageCatalog` 注册 + 工厂创建器 + resx 标题键；瞬态页（动态页签，由卡片的「配置详情」按钮按需打开）→ 在 `App.xaml.cs` 通过 `ITransientPageService.RegisterDefinition` 以 `isTransient: true` 定义（单例，干净离开时自动回收）。保存流程仍走 `SettingsEditorSession`（`MarkDirty()` → 窗口级 Save）。深入阅读：[029-settings-transient-pages.md](./Docs/decisions/029-settings-transient-pages.md)。
 - **修改 UI（XAML）**：在 `Views/` 找到视图 → 绑定到 VM → 从 `Themes/Theme.*.xaml` 取 `StaticResources` → 在 `InitializeComponent()` 后调用 `ApplyTheme()` → 使用 Pulsar 按钮样式。深入阅读：[Docs/guides/UI_BEST_PRACTICES.md](./Docs/guides/UI_BEST_PRACTICES.md)。
 - **凭据（Secret Fill）**：`SecretFillPlugin`（`Plugins/Core/SecretFill/`）+ `CredentialsManager`；敏感数据模型上加 `[JsonIgnore]`。

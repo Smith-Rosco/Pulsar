@@ -120,6 +120,12 @@ _Avoid_: parameter template, shared parameter metadata, "keep the copies in sync
 The pure-logic module that projects plugin usage statistics into display rows, heatmaps, and summary metrics. Loads a snapshot from the usage tracker once, then re-projects in memory for time-range filters and sort order; also renders CSV. The ViewModel holds binding collections and forwards filter/sort intent.
 _Avoid_: analytics page logic, statistics service
 
+### Dialogs
+
+**Dialog Catalog**:
+The single registration surface for modal dialogs (`DialogCatalog`) — one row per dialog owns its title resource key, content view-model type, size preset, button set and theme override. Call sites reference a `DialogId` constant through `ShowCustomAsync(dialogId, content, …)` instead of choosing a title and a size independently, and guards pin all three legs (the key exists in both resx files, the content type has a DataTemplate, every template has a row or a documented exemption).
+_Avoid_: picking a `DialogSizeConstraints` preset or a title key at the call site; keying the catalog by view-model type (a type determines neither — `InputDialogViewModel` is shown under three titles and `ProcessPickerViewModel` under two sizes); passing a bare `string` as the dialog id (that is how the old title-keyed overload is reached by accident).
+
 ### Configuration & Secrets
 
 **Profile**:

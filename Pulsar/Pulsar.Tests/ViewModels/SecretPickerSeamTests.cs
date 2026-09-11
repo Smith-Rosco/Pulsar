@@ -9,6 +9,7 @@ using Pulsar.Core.Localization;
 using Pulsar.Plugins.Core.SecretFill.Contracts;
 using Pulsar.Plugins.Core.SecretFill.Models;
 using Pulsar.Plugins.Core.SecretFill.Services;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Dialogs;
 using Pulsar.ViewModels.Settings;
@@ -210,7 +211,7 @@ namespace Pulsar.Tests.ViewModels
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(result);
             dialog.Setup(d => d.ShowCustomAsync(
-                    It.IsAny<string>(), It.IsAny<QuickSecretsViewModel>(), It.IsAny<DialogButtons>()))
+                    It.IsAny<DialogId>(), It.IsAny<QuickSecretsViewModel>(), It.IsAny<object[]>()))
                 .ReturnsAsync(result);
 
             return new SecretPickerViewModel(

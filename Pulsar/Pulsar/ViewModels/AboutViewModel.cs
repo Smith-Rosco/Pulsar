@@ -9,6 +9,7 @@ using Microsoft.Win32;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Updates;
 using Pulsar.ViewModels.Dialogs;
@@ -214,11 +215,7 @@ Machine: {Environment.MachineName}";
                 ConfigBackupOptionsViewModel.BackupOptionsMode.Export,
                 _loc["Dialog.ConfigBackup.PasswordRequiredHint"],
                 _loc["Dialog.ConfigBackup.PasswordMismatchHint"]);
-            var optionsResult = await _dialogService.ShowCustomAsync(
-                _loc["Settings.About.ExportOptionsTitle"],
-                optionsVm,
-                DialogButtons.OkCancel,
-                DialogSizeConstraints.Small);
+            var optionsResult = await _dialogService.ShowCustomAsync(DialogIds.ExportOptions, optionsVm);
             if (optionsResult != DialogResult.Confirmed) return;
 
             var result = await _backupService.ExportAsync(
@@ -270,11 +267,7 @@ Machine: {Environment.MachineName}";
                     ConfigBackupOptionsViewModel.BackupOptionsMode.ImportPassword,
                     _loc["Dialog.ConfigBackup.PasswordRequiredHint"],
                     _loc["Dialog.ConfigBackup.PasswordMismatchHint"]);
-                var passwordResult = await _dialogService.ShowCustomAsync(
-                    _loc["Settings.About.BackupPasswordTitle"],
-                    passwordVm,
-                    DialogButtons.OkCancel,
-                    DialogSizeConstraints.Small);
+                var passwordResult = await _dialogService.ShowCustomAsync(DialogIds.BackupPassword, passwordVm);
                 if (passwordResult != DialogResult.Confirmed) return;
                 password = passwordVm.PasswordResult;
                 if (string.IsNullOrEmpty(password)) return;

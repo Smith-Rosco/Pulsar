@@ -423,7 +423,7 @@ namespace Pulsar.ViewModels
 
             var vm = new QuickSecretsViewModel(_secretProtector);
             // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
-            await _dialogFlows.RunAsync(_loc["Notification.SecretConfiguration"], vm, vm2 =>
+            await _dialogFlows.RunAsync(DialogIds.AddSecretToSlot, vm, vm2 =>
             {
                 int nextSlot = 1;
                 if (CurrentSlots.Count > 0) nextSlot = CurrentSlots.Max(s => s.Slot) + 1;
@@ -465,7 +465,7 @@ namespace Pulsar.ViewModels
             
             var vm = new InputProfileViewModel(_windowService, _dialogService, _searchService, _loc, existingKeys, _customIconStore);
             // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
-            await _dialogFlows.RunAsync(_loc["Notification.NewProfile"], vm, vm2 =>
+            await _dialogFlows.RunAsync(DialogIds.AddProfile, vm, vm2 =>
             {
                 var processName = vm2.ProcessName;
                 var iconKey = vm2.IconKey;
@@ -532,7 +532,7 @@ namespace Pulsar.ViewModels
 
             var vm = new EditProfileViewModel(_dialogService, _searchService, _loc, profileKey, profileData.Alias ?? string.Empty, profileData.Icon ?? string.Empty, _customIconStore);
             // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
-            await _dialogFlows.RunAsync(_loc["Notification.EditProfile"], vm, vm2 =>
+            await _dialogFlows.RunAsync(DialogIds.EditProfile, vm, vm2 =>
             {
                 _session.UpdateProcessProfile(profileKey, p =>
                 {
@@ -716,7 +716,7 @@ namespace Pulsar.ViewModels
             vm.LoadForEdit(secretDisplay?.Label ?? slot.Label, payload.Account, payload.EncryptedData, autoEnter);
 
             // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
-            await _dialogFlows.RunAsync(_loc["Notification.EditSecret"], vm, vm2 =>
+            await _dialogFlows.RunAsync(DialogIds.EditSecretInSlot, vm, vm2 =>
             {
                 payload.Label = vm2.Label;
                 slot.SetArgument("autoEnter", vm2.AutoEnter.ToString());
@@ -744,7 +744,7 @@ namespace Pulsar.ViewModels
 
             // [Architecture review 2026-09-04, candidate M] Kept direct: post-dialog logic keys
             // on pickerVm.SelectedSecretId, not DialogResult — a different protocol than the recipe.
-            await _dialogService.ShowCustomAsync(_loc["Notification.SelectSecret"], pickerVm, Models.Enums.DialogButtons.None, DialogSizeConstraints.Medium);
+            await _dialogService.ShowCustomAsync(DialogIds.PickSecret, pickerVm);
 
             if (pickerVm.SelectedSecretId.HasValue)
             {
@@ -997,7 +997,7 @@ namespace Pulsar.ViewModels
         {
             var vm = new ProcessPickerViewModel(_windowService);
             // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
-            await _dialogFlows.RunAsync(_loc["Notification.SelectApplication"], vm, vm2 =>
+            await _dialogFlows.RunAsync(DialogIds.PickProcess, vm, vm2 =>
             {
                 if (vm2.SelectedProcess == null) return;
 
@@ -1030,7 +1030,7 @@ namespace Pulsar.ViewModels
 
                     if (!string.IsNullOrEmpty(cachedIconPath)) slot.IconKey = cachedIconPath;
                 }
-            }, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
+            });
         }
 
         [RelayCommand]
@@ -1081,7 +1081,7 @@ namespace Pulsar.ViewModels
             if (item == null) return;
             var originalIconKey = item.IconKey;
             var vm = new IconPickerViewModel(_searchService, originalIconKey, key => item.IconKey = key, _customIconStore);
-            var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectIcon"], vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
+            var result = await _dialogService.ShowCustomAsync(DialogIds.PickIcon, vm);
 
             // [Architecture review 2026-09-04, candidate M] Kept direct: this flow has an
             // else-restore branch (cancel restores the original icon), which the recipe

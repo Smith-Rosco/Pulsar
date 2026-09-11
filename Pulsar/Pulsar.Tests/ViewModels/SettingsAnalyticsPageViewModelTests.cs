@@ -130,10 +130,9 @@ namespace Pulsar.Tests.ViewModels
             var dialogServiceMock = new Mock<IDialogService>();
             dialogServiceMock
                 .Setup(d => d.ShowCustomAsync(
-                    It.IsAny<string>(),
+                    DialogIds.PluginLogs,
                     It.IsAny<PluginLogViewerViewModel>(),
-                    It.IsAny<DialogButtons>(),
-                    It.IsAny<DialogSizeConstraints>()))
+                    It.IsAny<object[]>()))
                 .ReturnsAsync(DialogResult.Confirmed);
 
             var vm = CreateViewModel(
@@ -146,10 +145,9 @@ namespace Pulsar.Tests.ViewModels
 
             dialogServiceMock.Verify(
                 d => d.ShowCustomAsync(
-                    It.IsAny<string>(),
+                    DialogIds.PluginLogs,
                     It.Is<PluginLogViewerViewModel>(v => v.PluginName == "Plugin A"),
-                    It.IsAny<DialogButtons>(),
-                    It.IsAny<DialogSizeConstraints>()),
+                    It.IsAny<object[]>()),
                 Times.Once);
         }
 
@@ -159,10 +157,9 @@ namespace Pulsar.Tests.ViewModels
             var dialogServiceMock = new Mock<IDialogService>();
             dialogServiceMock
                 .Setup(d => d.ShowCustomAsync(
-                    It.IsAny<string>(),
+                    DialogIds.PluginAnalyticsDetails,
                     It.IsAny<PluginAnalyticsDetailViewModel>(),
-                    It.IsAny<DialogButtons>(),
-                    It.IsAny<DialogSizeConstraints>()))
+                    It.IsAny<object[]>()))
                 .ReturnsAsync(DialogResult.Confirmed);
 
             _registryMock.Setup(r => r.GetDescriptor(It.IsAny<string>())).Returns((PluginDescriptor?)null);
@@ -176,10 +173,9 @@ namespace Pulsar.Tests.ViewModels
 
             dialogServiceMock.Verify(
                 d => d.ShowCustomAsync(
-                    It.IsAny<string>(),
+                    DialogIds.PluginAnalyticsDetails,
                     It.Is<PluginAnalyticsDetailViewModel>(v => v.PluginId == "plugin.a"),
-                    It.IsAny<DialogButtons>(),
-                    It.IsAny<DialogSizeConstraints>()),
+                    It.IsAny<object[]>()),
                 Times.Once);
         }
 
