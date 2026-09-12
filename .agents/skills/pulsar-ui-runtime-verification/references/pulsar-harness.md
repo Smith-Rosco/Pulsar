@@ -38,7 +38,8 @@ dotnet "Pulsar/Pulsar.E2E/bin/x64/Debug/net8.0-windows/Pulsar.E2E.dll" run \
 - `AppLauncher` 用 `--ui-debug` + `%AppData%\Pulsar.Debug\` 配置副本（fixture 机制）→ **不碰用户真实配置**。
 - 设置窗口导航项自动化 ID：`Pulsar.Settings.Nav.<pageId>`，`pageId ∈ Slots | Plugins | General | Appearance | Analytics`；槽位编辑临时页为 `slot-editor:<Profile>:<n>`。
 - 唤起设置窗口：`{ "type": "command", "command": "open-settings" }`。
-- 支持的步骤类型：`launch` / `wait` / `command` / `assert` / `click` / `exit`（详见 `WorkflowRunner`）。
+- 支持的步骤类型：`launch` / `wait` / `command` / `assert` / `click` / `dump` / `record` / `exit`（详见 `WorkflowRunner`）。
+- **`dump` 步骤在 PASS 时也产出 UIA 树**（`{ "type": "dump", "id": "...", "file": "xxx.txt" }`，写到 `artifacts/<runId>/<file>`）——`assert`/失败截图只在 FAIL 时落盘，**布局类缺陷（溢出/错位/裁切）用它做「数值红绿对照」**：修复前后各跑一轮，grep dump 里的 `bounds=(x,y,w×h)` 做数值断言（如元素右缘 ≤ 窗口右缘），不依赖目测截图。实例见 2026-09-12 插件页工具栏溢出修复（`artifacts/settings-plugins-tabs.json` + `toolbar-uia-tree.txt`）。
 - 模板见 `assets/e2e-nav-click-workflow.json`。
 
 ## 3. 指示器 / 导航动画的关键位置（`Views/SettingsWindow.xaml.cs`）
