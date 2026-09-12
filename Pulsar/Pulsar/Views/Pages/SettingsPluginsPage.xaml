@@ -325,49 +325,66 @@
 
         <!-- Toolbar — 页头下方独立整行：筛选 + 搜索 + 跳转 + 刷新。
              插件页操作栏较宽（合计约 700px），若继续与标题并排会把标题/描述挤出左列
-             并被控件遮挡；移入独立行后拥有整行宽度，标题永不被遮挡。 -->
-        <StackPanel Grid.Row="1"
-                    Orientation="Horizontal"
-                    VerticalAlignment="Center"
-                    Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
+             并被控件遮挡；移入独立行后拥有整行宽度，标题永不被遮挡。
+             ⚠ 必须用 Grid（Star 列吸收宽度变化），不能用水平 StackPanel：
+             StackPanel 以无限宽测量子项且不裁剪，窗口缩窄时整行向右溢出窗口边缘
+             （2026-09-12 实证：Refresh 按钮右缘超出窗口 100 物理像素被裁切）。 -->
+        <Grid Grid.Row="1"
+              VerticalAlignment="Center"
+              Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*" MinWidth="140"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
             <!-- Quick status filter -->
-            <ComboBox ItemsSource="{Binding BuiltIn.FilterOptions}"
+            <ComboBox Grid.Column="0"
+                      ItemsSource="{Binding BuiltIn.FilterOptions}"
                       SelectedValuePath="Mode"
                       SelectedValue="{Binding BuiltIn.SelectedFilterMode, Mode=TwoWay}"
                       DisplayMemberPath="Label"
                       MinWidth="110"
                       Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
 
-            <!-- Search Box (only visible on Built-in tab) -->
-            <ui:TextBox AutomationProperties.AutomationId="Pulsar.Settings.Plugins.SearchBox"
+            <!-- Search Box (only visible on Built-in tab) — Star 列弹性收缩，240 封顶 -->
+            <ui:TextBox Grid.Column="1"
+                        AutomationProperties.AutomationId="Pulsar.Settings.Plugins.SearchBox"
                         Tag="PluginSearchBox"
                         PlaceholderText="{lex:Locale Settings.Plugins.SearchPlugins}"
                         Icon="{ui:SymbolIcon Search24}"
                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         ClearButtonEnabled="True"
-                        Width="240"
+                        MaxWidth="240"
+                        MinWidth="140"
+                        HorizontalAlignment="Left"
                         Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
-            
+
             <!-- Quick Navigation Buttons -->
-            <ui:Button Content="{lex:Locale Settings.Plugins.GroupPillarsJump}"
+            <ui:Button Grid.Column="2"
+                       Content="{lex:Locale Settings.Plugins.GroupPillarsJump}"
                        Icon="{ui:SymbolIcon Shield24}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Click="JumpToPillarsButton_Click"
                        ToolTip="{lex:Locale Settings.Plugins.GroupPillarsJumpTooltip}"
                        Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
-            <ui:Button Content="{lex:Locale Settings.Plugins.GroupSystemJump}"
+            <ui:Button Grid.Column="3"
+                       Content="{lex:Locale Settings.Plugins.GroupSystemJump}"
                        Icon="{ui:SymbolIcon PuzzlePiece24}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Click="JumpToSystemButton_Click"
                        ToolTip="{lex:Locale Settings.Plugins.GroupSystemJumpTooltip}"
                        Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
-            
+
             <!-- Refresh Button -->
-            <ui:Button Content="{lex:Locale Settings.Plugins.Refresh}"
+            <ui:Button Grid.Column="4"
+                       Content="{lex:Locale Settings.Plugins.Refresh}"
                        Command="{Binding RefreshAllCommand}"
                        Icon="{ui:SymbolIcon ArrowClockwise24}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
-        </StackPanel>
+        </Grid>
 
         <!-- Tab Control: Built-in / External -->
         <TabControl Grid.Row="2"
