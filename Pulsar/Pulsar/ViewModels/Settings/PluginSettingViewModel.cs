@@ -68,6 +68,60 @@ namespace Pulsar.ViewModels.Settings
             ValidationMessage = string.Empty;
         }
 
+        /// <summary>
+        /// 文本型设置（String / Secret / Path / Selection）共享的取值形态：
+        /// 当前值优先，回退定义默认值，最后空串。各子类的类型化属性
+        /// （StringValue / SecretValue / PathValue / SelectedOption）都是它的别名。
+        /// </summary>
+        protected string TextValue => Value?.ToString() ?? (Definition.DefaultValue?.ToString() ?? string.Empty);
+
+        /// <summary>
+        /// 文本型设置共享的校验骨架：required → min/max length →（可选）pattern。
+        /// 结构只有一个 owner（本方法）；类型间的真实分面差异——resx 键组与是否
+        /// 检查 Pattern——由调用方传参，不做复制。
+        /// </summary>
+        protected void ValidateText(string text, string requiredKey, string minLengthKey, string maxLengthKey, bool checkPattern)
+        {
+            if (Definition.IsRequired && string.IsNullOrWhiteSpace(text))
+            {
+                ValidationMessage = _loc[requiredKey];
+                return;
+            }
+
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            if (Definition.MinLength.HasValue && text.Length < Definition.MinLength.Value)
+            {
+                ValidationMessage = string.Format(_loc[minLengthKey], Definition.MinLength.Value);
+                return;
+            }
+
+            if (Definition.MaxLength.HasValue && text.Length > Definition.MaxLength.Value)
+            {
+                ValidationMessage = string.Format(_loc[maxLengthKey], Definition.MaxLength.Value);
+                return;
+            }
+
+            if (checkPattern && !string.IsNullOrEmpty(Definition.Pattern))
+            {
+                try
+                {
+                    if (!Regex.IsMatch(text, Definition.Pattern))
+                    {
+                        ValidationMessage = _loc["Validation.FormatMismatch"];
+                        return;
+                    }
+                }
+                catch
+                {
+                    // 无效正则按无约束处理：非法 pattern 不应让设置面板崩溃。
+                }
+            }
+        }
+
         public void ResetToDefault()
         {
             Value = Definition.DefaultValue;
@@ -114,7 +168,7 @@ namespace Pulsar.ViewModels.Settings
     {
         public string StringValue
         {
-            get => Value?.ToString() ?? (Definition.DefaultValue?.ToString() ?? string.Empty);
+            get => TextValue;
             set => Value = value;
         }
 
@@ -123,43 +177,7 @@ namespace Pulsar.ViewModels.Settings
         public override void Validate()
         {
             base.Validate();
-            var strValue = StringValue;
-
-            if (Definition.IsRequired && string.IsNullOrWhiteSpace(strValue))
-            {
-                ValidationMessage = _loc["Validation.Required"];
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(strValue))
-            {
-                if (Definition.MinLength.HasValue && strValue.Length < Definition.MinLength.Value)
-                {
-                    ValidationMessage = string.Format(_loc["Validation.MinLengthFormat"], Definition.MinLength.Value);
-                    return;
-                }
-
-                if (Definition.MaxLength.HasValue && strValue.Length > Definition.MaxLength.Value)
-                {
-                    ValidationMessage = string.Format(_loc["Validation.MaxLengthFormat"], Definition.MaxLength.Value);
-                    return;
-                }
-
-                if (!string.IsNullOrEmpty(Definition.Pattern))
-                {
-                    try
-                    {
-                        if (!Regex.IsMatch(strValue, Definition.Pattern))
-                        {
-                            ValidationMessage = _loc["Validation.FormatMismatch"];
-                            return;
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
+            ValidateText(StringValue, "Validation.Required", "Validation.MinLengthFormat", "Validation.MaxLengthFormat", checkPattern: true);
         }
     }
 
@@ -169,7 +187,7 @@ namespace Pulsar.ViewModels.Settings
 
         public string SelectedOption
         {
-            get => Value?.ToString() ?? (Definition.DefaultValue?.ToString() ?? string.Empty);
+            get => TextValue;
             set => Value = value;
         }
 
@@ -189,7 +207,7 @@ namespace Pulsar.ViewModels.Settings
     {
         public string PathValue
         {
-            get => Value?.ToString() ?? (Definition.DefaultValue?.ToString() ?? string.Empty);
+            get => TextValue;
             set => Value = value;
         }
 
@@ -198,28 +216,7 @@ namespace Pulsar.ViewModels.Settings
         public override void Validate()
         {
             base.Validate();
-            var pathValue = PathValue;
-
-            if (Definition.IsRequired && string.IsNullOrWhiteSpace(pathValue))
-            {
-                ValidationMessage = _loc["Validation.PathRequired"];
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(pathValue))
-            {
-                if (Definition.MinLength.HasValue && pathValue.Length < Definition.MinLength.Value)
-                {
-                    ValidationMessage = string.Format(_loc["Validation.PathMinLengthFormat"], Definition.MinLength.Value);
-                    return;
-                }
-
-                if (Definition.MaxLength.HasValue && pathValue.Length > Definition.MaxLength.Value)
-                {
-                    ValidationMessage = string.Format(_loc["Validation.PathMaxLengthFormat"], Definition.MaxLength.Value);
-                    return;
-                }
-            }
+            ValidateText(PathValue, "Validation.PathRequired", "Validation.PathMinLengthFormat", "Validation.PathMaxLengthFormat", checkPattern: false);
         }
     }
 
@@ -264,7 +261,7 @@ namespace Pulsar.ViewModels.Settings
     {
         public string SecretValue
         {
-            get => Value?.ToString() ?? (Definition.DefaultValue?.ToString() ?? string.Empty);
+            get => TextValue;
             set => Value = value;
         }
 
@@ -273,43 +270,7 @@ namespace Pulsar.ViewModels.Settings
         public override void Validate()
         {
             base.Validate();
-            var secretVal = SecretValue;
-
-            if (Definition.IsRequired && string.IsNullOrWhiteSpace(secretVal))
-            {
-                ValidationMessage = _loc["Validation.Required"];
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(secretVal))
-            {
-                if (Definition.MinLength.HasValue && secretVal.Length < Definition.MinLength.Value)
-                {
-                    ValidationMessage = string.Format(_loc["Validation.MinLengthFormat"], Definition.MinLength.Value);
-                    return;
-                }
-
-                if (Definition.MaxLength.HasValue && secretVal.Length > Definition.MaxLength.Value)
-                {
-                    ValidationMessage = string.Format(_loc["Validation.MaxLengthFormat"], Definition.MaxLength.Value);
-                    return;
-                }
-
-                if (!string.IsNullOrEmpty(Definition.Pattern))
-                {
-                    try
-                    {
-                        if (!Regex.IsMatch(secretVal, Definition.Pattern))
-                        {
-                            ValidationMessage = _loc["Validation.FormatMismatch"];
-                            return;
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
+            ValidateText(SecretValue, "Validation.Required", "Validation.MinLengthFormat", "Validation.MaxLengthFormat", checkPattern: true);
         }
     }
 
