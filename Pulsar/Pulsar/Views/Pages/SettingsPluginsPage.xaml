@@ -339,7 +339,8 @@
                       Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
 
             <!-- Search Box (only visible on Built-in tab) -->
-            <ui:TextBox Tag="PluginSearchBox"
+            <ui:TextBox AutomationProperties.AutomationId="Pulsar.Settings.Plugins.SearchBox"
+                        Tag="PluginSearchBox"
                         PlaceholderText="{lex:Locale Settings.Plugins.SearchPlugins}"
                         Icon="{ui:SymbolIcon Search24}"
                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
@@ -377,7 +378,8 @@
                     BorderThickness="0">
 
             <!-- Built-in Plugins Tab -->
-            <TabItem Header="{lex:Locale Settings.Plugins.BuiltIn}">
+            <TabItem AutomationProperties.AutomationId="Pulsar.Settings.Plugins.TabBuiltIn"
+                     Header="{lex:Locale Settings.Plugins.BuiltIn}">
 
         <!-- Grouped List with Sticky Header Support -->
         <Grid Style="{StaticResource TabSlideInStyle}">
@@ -606,7 +608,8 @@
             </TabItem>
 
             <!-- External Plugins Tab -->
-            <TabItem Header="{lex:Locale Settings.Plugins.External}">
+            <TabItem AutomationProperties.AutomationId="Pulsar.Settings.Plugins.TabExternal"
+                     Header="{lex:Locale Settings.Plugins.External}">
                 <Grid Style="{StaticResource TabSlideInStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -620,7 +623,8 @@
                                    FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    Margin="{StaticResource Pulsar.Gap.Right.MD}"/>
-                        <ui:Button Content="{lex:Locale Settings.Plugins.InstallFromFile}"
+                        <ui:Button AutomationProperties.AutomationId="Pulsar.Settings.Plugins.ExternalInstall"
+                                   Content="{lex:Locale Settings.Plugins.InstallFromFile}"
                                    Command="{Binding ExternalPluginManager.InstallFromFileCommand}"
                                    Icon="{ui:SymbolIcon FolderOpen24}"
                                    Style="{StaticResource PulsarPrimaryButtonStyle}"

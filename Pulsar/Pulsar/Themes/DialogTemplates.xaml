@@ -7,9 +7,16 @@
     <!-- Default String Template -->
     <DataTemplate DataType="{x:Type sys:String}">
         <!-- ScrollViewer: message bodies grow with the window (AutoHeight cap) and
-             scroll beyond it instead of clipping at the window edge. -->
+             scroll beyond it instead of clipping at the window edge.
+             Focusable=False is REQUIRED: this template is IMPLICIT (DataType=String),
+             so it renders every string shown via a ContentPresenter app-wide —
+             including TabItem/Expander/menu headers. A focusable ScrollViewer there
+             steals keyboard focus from focus-based selection logic (TabItem.SetFocus
+             → IsSelected never fires → tab headers appear "unclickable").
+             Mouse-wheel scrolling does not need focus. -->
         <ScrollViewer VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
+                      HorizontalScrollBarVisibility="Disabled"
+                      Focusable="False">
             <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="{StaticResource Pulsar.Type.Subtitle}" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
         </ScrollViewer>
     </DataTemplate>
