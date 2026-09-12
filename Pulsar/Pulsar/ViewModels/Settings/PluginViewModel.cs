@@ -100,9 +100,6 @@ namespace Pulsar.ViewModels.Settings
         public bool HasCustomConfigDialog => _metadata?.Capabilities.HasCustomConfigDialog ?? false;
 
         /// <summary>设置对话框（含 Window Inspector）解析依赖用。</summary>
-        public IDialogService? DialogService => _dialogService;
-
-        /// <summary>设置对话框（含 Window Inspector）解析依赖用。</summary>
         public string HealthScoreText => _formatter.FormatHealthScoreText(HealthReport);
         public string HealthScoreColor => _formatter.FormatHealthScoreColor(HealthReport);
 
@@ -329,7 +326,29 @@ namespace Pulsar.ViewModels.Settings
             return _plugin as IPluginConfigurable;
         }
 
+        /// <summary>
+        /// ValueChanged 事件壳：async void 只允许在事件边界存在，且整体受
+        /// try/catch 保护——任何异常只记日志，绝不穿透到 WPF 消息循环。
+        /// 程序内调用点一律走 <see cref="PersistSettingAsync"/>（可 await）。
+        /// </summary>
         private async void OnSettingChanged(string key, object? newValue)
+        {
+            try
+            {
+                await PersistSettingAsync(key, newValue);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[PluginViewModel] Failed to persist setting {Key} for {PluginId}", key, Id);
+            }
+        }
+
+        /// <summary>
+        /// 校验并持久化单个设置。显式 Task 形态：ProcessBlacklist 确认路径必须
+        /// await 本方法，与后续的 LoadSettings 重建保持顺序（原先 fire-and-forget
+        /// 两个 async void 会与重建产生竞态）。
+        /// </summary>
+        private async Task PersistSettingAsync(string key, object? newValue)
         {
             var setting = Settings.FirstOrDefault(s => s.Key == key);
             if (setting != null)
@@ -514,8 +533,8 @@ namespace Pulsar.ViewModels.Settings
 
                 if (result == Models.Enums.DialogResult.Confirmed)
                 {
-                    OnSettingChanged("ExcludeProcesses", vm.Result);
-                    OnSettingChanged("EnableSwitchDiagnostics", vm.EnableSwitchDiagnostics);
+                    await PersistSettingAsync("ExcludeProcesses", vm.Result);
+                    await PersistSettingAsync("EnableSwitchDiagnostics", vm.EnableSwitchDiagnostics);
                     var configurable = await EnsureConfigurablePluginAsync();
                     if (configurable != null)
                     {
@@ -544,7 +563,7 @@ namespace Pulsar.ViewModels.Settings
                 HasSettings = Settings.Count > 0;
             }
 
-            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _discoveryService, _configService, _loc, _exclusionPolicy);
+            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _discoveryService, _configService, _loc, _exclusionPolicy, _dialogService);
             var dialogResult = await _dialogService.ShowCustomAsync(DialogIds.PluginSettings, dialogVm, Name);
 
             if (dialogResult == Models.Enums.DialogResult.Confirmed)

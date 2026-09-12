@@ -23,6 +23,7 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly IConfigService? _configService;
         private readonly IDiscoveryExclusionPolicy? _exclusionPolicy;
         private readonly ILocalizationService? _loc;
+        private readonly IDialogService? _dialogService;
 
         [ObservableProperty]
         private string _title;
@@ -55,13 +56,15 @@ namespace Pulsar.ViewModels.Dialogs
             IWindowDiscoveryService? discoveryService = null,
             IConfigService? configService = null,
             ILocalizationService? loc = null,
-            IDiscoveryExclusionPolicy? exclusionPolicy = null)
+            IDiscoveryExclusionPolicy? exclusionPolicy = null,
+            IDialogService? dialogService = null)
         {
             _pluginViewModel = pluginViewModel;
             _discoveryService = discoveryService;
             _configService = configService;
             _exclusionPolicy = exclusionPolicy;
             _loc = loc;
+            _dialogService = dialogService;
             
             _title = $"Configure {pluginViewModel.Name}";
             _pluginName = pluginViewModel.Name;
@@ -112,8 +115,7 @@ namespace Pulsar.ViewModels.Dialogs
         [RelayCommand]
         private async Task OpenWindowInspectorAsync()
         {
-            var dialogService = _pluginViewModel.DialogService;
-            if (dialogService == null || _discoveryService == null)
+            if (_dialogService == null || _discoveryService == null)
             {
                 return;
             }
@@ -125,7 +127,7 @@ namespace Pulsar.ViewModels.Dialogs
 
             await inspector.InitializeAsync();
 
-            await dialogService.ShowCustomAsync(DialogIds.WindowInspector, inspector);
+            await _dialogService.ShowCustomAsync(DialogIds.WindowInspector, inspector);
         }
 
         public Task<bool> CanCloseAsync(DialogResult result)
